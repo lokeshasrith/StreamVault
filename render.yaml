@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: streamvault-api
+    runtime: docker
+    dockerfilePath: streamvault/streamvault-api/StreamVault.Api/Dockerfile
+    dockerContext: streamvault/streamvault-api/StreamVault.Api
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Jwt__Key
+        sync: false          # Set manually in Render dashboard (secret)
+      - key: Jwt__Issuer
+        value: StreamVault
+      - key: Jwt__Audience
+        value: StreamVault
+      - key: Tmdb__ApiKey
+        sync: false          # Set manually (optional but needed for content)
+      - key: ConnectionStrings__Default
+        value: "Data Source=/data/streamvault.db"
+    disk:
+      name: streamvault-db
+      mountPath: /data
+      sizeGB: 1

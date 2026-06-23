@@ -99,6 +99,9 @@ builder.Services.AddScoped<ImdbApiClient>();
 builder.Services.AddScoped<NewsApiClient>();
 
 // CORS Configuration
+var allowedOrigins = (builder.Configuration["AllowedOrigins"] ?? "")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
 builder.Services.AddCors(opt =>
 {
     opt.AddPolicy("spa", policy =>
@@ -108,6 +111,8 @@ builder.Services.AddCors(opt =>
             // Allow localhost and any private-network IP for mobile dev access
             if (uri.Host == "localhost" && uri.Port >= 5000 && uri.Port <= 5300) return true;
             if (System.Net.IPAddress.TryParse(uri.Host, out _) && uri.Port >= 5000 && uri.Port <= 5300) return true;
+            // Allow configured origins (e.g. GitHub Pages, Vercel, etc.)
+            if (allowedOrigins.Any(o => string.Equals(o, origin, StringComparison.OrdinalIgnoreCase))) return true;
             return false;
         })
         .AllowAnyHeader()
@@ -186,5 +191,8 @@ app.UseAuthentication(); // must be before UseAuthorization
 app.UseAuthorization();
 
 app.MapControllers().RequireRateLimiting("api");
+
+// Health check for Render / load balancers
+app.MapGet("/api/health", () => Results.Ok(new { status = "ok", utc = DateTime.UtcNow }));
 
 app.Run();
