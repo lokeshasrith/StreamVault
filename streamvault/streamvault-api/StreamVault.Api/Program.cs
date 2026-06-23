@@ -99,7 +99,7 @@ builder.Services.AddScoped<ImdbApiClient>();
 builder.Services.AddScoped<NewsApiClient>();
 
 // CORS Configuration
-var allowedOrigins = (builder.Configuration["AllowedOrigins"] ?? "")
+var allowedOrigins = (builder.Configuration["AllowedOrigins"] ?? "https://lokeshasrith.github.io")
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 builder.Services.AddCors(opt =>
