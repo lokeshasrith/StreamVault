@@ -17,5 +17,7 @@ services:
         value: StreamVault
       - key: Tmdb__ApiKey
         sync: false          # Set manually (optional but needed for content)
+      - key: AllowedOrigins
+        value: "https://lokeshasrith.github.io"
       - key: ConnectionStrings__Default
         value: "Data Source=/tmp/streamvault.db"
