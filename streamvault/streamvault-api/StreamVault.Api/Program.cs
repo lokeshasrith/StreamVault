@@ -105,19 +105,11 @@ var allowedOrigins = (builder.Configuration["AllowedOrigins"] ?? "https://lokesh
 builder.Services.AddCors(opt =>
 {
     opt.AddPolicy("spa", policy =>
-        policy.SetIsOriginAllowed(origin =>
-        {
-            if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
-            // Allow localhost and any private-network IP for mobile dev access
-            if (uri.Host == "localhost" && uri.Port >= 5000 && uri.Port <= 5300) return true;
-            if (System.Net.IPAddress.TryParse(uri.Host, out _) && uri.Port >= 5000 && uri.Port <= 5300) return true;
-            // Allow configured origins (e.g. GitHub Pages, Vercel, etc.)
-            if (allowedOrigins.Any(o => string.Equals(o, origin, StringComparison.OrdinalIgnoreCase))) return true;
-            return false;
-        })
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials());
+        policy
+            .WithOrigins("https://lokeshasrith.github.io", "http://localhost:5203", "http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
 });
 
 builder.Services.AddControllers()
