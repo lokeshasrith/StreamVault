@@ -1,0 +1,42 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "streamvault", "streamvault", "{080F750F-1EC2-0FAD-A81E-3820AC7E2FCE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "streamvault-api", "streamvault-api", "{E0493939-386B-88CE-75B4-2993C96CA679}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamVault.Api", "streamvault\streamvault-api\StreamVault.Api\StreamVault.Api.csproj", "{3BD3C829-228C-9F51-633B-C8C6350B26AA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "StreamVault.Tui", "StreamVault.Tui", "{E4ABA362-6EE9-4A7A-AB5D-C363474D1061}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamVault.Tui", "streamvault\streamvault-api\StreamVault.Tui\StreamVault.Tui\StreamVault.Tui.csproj", "{42BA54F3-D75E-4DE0-8D3D-3CAA4406366E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3BD3C829-228C-9F51-633B-C8C6350B26AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BD3C829-228C-9F51-633B-C8C6350B26AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BD3C829-228C-9F51-633B-C8C6350B26AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BD3C829-228C-9F51-633B-C8C6350B26AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42BA54F3-D75E-4DE0-8D3D-3CAA4406366E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42BA54F3-D75E-4DE0-8D3D-3CAA4406366E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42BA54F3-D75E-4DE0-8D3D-3CAA4406366E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42BA54F3-D75E-4DE0-8D3D-3CAA4406366E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E0493939-386B-88CE-75B4-2993C96CA679} = {080F750F-1EC2-0FAD-A81E-3820AC7E2FCE}
+		{3BD3C829-228C-9F51-633B-C8C6350B26AA} = {E0493939-386B-88CE-75B4-2993C96CA679}
+		{E4ABA362-6EE9-4A7A-AB5D-C363474D1061} = {E0493939-386B-88CE-75B4-2993C96CA679}
+		{42BA54F3-D75E-4DE0-8D3D-3CAA4406366E} = {E4ABA362-6EE9-4A7A-AB5D-C363474D1061}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BD920164-1EC1-47ED-AD48-255814ACA8F7}
+	EndGlobalSection
+EndGlobal

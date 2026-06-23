@@ -1,0 +1,38 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Node
+node_modules/
+streamvault-frontend/node_modules/
+streamvault-frontend/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# .NET
+**/bin/
+**/obj/
+
+# Local env/secrets
+.env
+**/.env
+
+# Logs and temp files
+*.log
+server-stdout.log
+server-stderr.log
+sv-out.log
+sv-err.log
+test-stdout.log
+test-stderr.log
+test-stdout2.log
+test-stderr2.log
+
+# Local data
+*.db
+*.db-shm
+*.db-wal
+data/**
