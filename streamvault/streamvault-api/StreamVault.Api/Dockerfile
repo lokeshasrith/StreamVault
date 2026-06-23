@@ -11,9 +11,7 @@ COPY --from=build /app/out .
 
 # SQLite database lives in /data (mount a persistent disk on Render)
 ENV ASPNETCORE_URLS=http://+:10000
-ENV ConnectionStrings__Default="Data Source=/data/streamvault.db"
-
-RUN mkdir -p /data
+ENV ConnectionStrings__Default="Data Source=/tmp/streamvault.db"
 
 EXPOSE 10000
 ENTRYPOINT ["dotnet", "StreamVault.Api.dll"]
