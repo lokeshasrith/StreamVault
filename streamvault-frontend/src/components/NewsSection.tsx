@@ -94,10 +94,6 @@ function HeroSpotlight({ items }: { items: NewsItem[] }) {
     return clearRotationTimer;
   }, [safeItems.length]);
 
-  useEffect(() => {
-    setIdx((prev) => (prev < safeItems.length ? prev : 0));
-  }, [safeItems.length]);
-
   const go = (d: -1 | 1) => {
     clearRotationTimer();
     setIdx(p => (p + d + safeItems.length) % safeItems.length);

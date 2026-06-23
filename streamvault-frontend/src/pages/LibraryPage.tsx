@@ -175,6 +175,7 @@ export default function LibraryPage() {
       .flatMap(entry => entry.genre?.split(',').map(g => g.trim()) || []);
     const uniqueGenres = [...new Set(allGenres)].filter(Boolean).sort();
     setGenres(uniqueGenres);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [library, currentStatusKey, searchQuery, selectedGenre, selectedType, sortBy, sortOrder]);
 
   // Handle search queries via custom event

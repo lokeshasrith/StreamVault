@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useCallback, useEffect, useMemo, useState } from "react";
 import { getMe as apiGetMe, login as apiLogin, register as apiRegister } from "../api/authApi";
 import type { LoginDto, RegisterDto } from "../api/authApi";
 import type { AuthUserProfile } from "../api/authApi";
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
   };
 
-  const login = async (dto: LoginDto) => {
+  const login = useCallback(async (dto: LoginDto) => {
     const { token, userKey, user } = await apiLogin(dto);
     localStorage.setItem(STORAGE_KEY, token);
     localStorage.setItem(USER_KEY_STORAGE, userKey);
@@ -64,15 +64,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(token);
     setUserKey(userKey);
     setProfile(user ?? null);
-  };
+  }, []);
 
-  const register = async (dto: RegisterDto) => {
+  const register = useCallback(async (dto: RegisterDto) => {
     await apiRegister(dto);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     clearAuthState();
-  };
+  }, []);
 
   useEffect(() => {
     if (!token || userKey) return;
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     profile,
     isAuthenticated: !!token,
     login, register, logout
-  }), [token, userKey, profile]);
+  }), [token, userKey, profile, login, register, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

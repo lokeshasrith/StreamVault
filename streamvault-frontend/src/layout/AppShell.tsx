@@ -31,19 +31,6 @@ export default function AppShell() {
   const activeUserKey = userKey ?? "";
   const isMismatchedRouteUser = !!activeUserKey && routeUserKey !== activeUserKey;
 
-  if (!activeUserKey || isMismatchedRouteUser) {
-    return <Navigate to={activeUserKey ? `/app/${activeUserKey}` : "/auth"} replace />;
-  }
-
-  const withUserRoot = (path: string): string => {
-    const normalized = path.startsWith("/") ? path : `/${path}`;
-    if (normalized === "/") {
-      return `/app/${activeUserKey}`;
-    }
-
-    return `/app/${activeUserKey}${normalized}`;
-  };
-
   const nav = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -194,9 +181,22 @@ export default function AppShell() {
     }
   };
 
-  const isDiscover = location.pathname === withUserRoot("/");
   const [mobileSearchOpen, setMobileSearchOpen] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+
+  if (!activeUserKey || isMismatchedRouteUser) {
+    return <Navigate to={activeUserKey ? `/app/${activeUserKey}` : "/auth"} replace />;
+  }
+
+  const withUserRoot = (path: string): string => {
+    const normalized = path.startsWith("/") ? path : `/${path}`;
+    if (normalized === "/") {
+      return `/app/${activeUserKey}`;
+    }
+    return `/app/${activeUserKey}${normalized}`;
+  };
+
+  const isDiscover = location.pathname === withUserRoot("/");
 
   return (
     <div className="app-shell-bg min-h-screen overflow-x-hidden text-[#F4EFE6]">
