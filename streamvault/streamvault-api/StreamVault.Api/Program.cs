@@ -115,6 +115,7 @@ builder.Services.AddCors(opt =>
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
     {
+        o.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
         o.JsonSerializerOptions.Converters.Add(
             new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
