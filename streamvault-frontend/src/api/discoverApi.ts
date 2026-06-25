@@ -332,9 +332,69 @@ export function truncateText(text: string | undefined, maxLength: number): strin
   return text.substring(0, maxLength).trim() + '...';
 }
 
+const FALLBACK_MOVIE_QUERIES = [
+  'Dune Part Two',
+  'Oppenheimer',
+  'Inception',
+  'Interstellar',
+  'The Dark Knight',
+  'Mad Max Fury Road',
+  'Avengers Endgame',
+  'Spider Man Across the Spider Verse',
+];
+
+const FALLBACK_TV_QUERIES = [
+  'Breaking Bad',
+  'Game of Thrones',
+  'The Last of Us',
+  'Stranger Things',
+  'Severance',
+  'The Bear',
+  'Dark',
+  'Sherlock',
+];
+
 // ─── Main API class ───────────────────────────────────────────────────────────
 
 class DiscoverAPI {
+  private async getSeededFallback(type: 'movie' | 'tv', page: number = 1): Promise<ContentItem[]> {
+    const seeds = type === 'movie' ? FALLBACK_MOVIE_QUERIES : FALLBACK_TV_QUERIES;
+    const pageSize = 4;
+    const pageSeeds = seeds.slice((page - 1) * pageSize, page * pageSize);
+    if (pageSeeds.length === 0) return [];
+
+    const results = await Promise.allSettled(
+      pageSeeds.map((query) => this.search({ query, type, page: 1, pageSize: 8 }))
+    );
+
+    return results
+      .flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
+      .filter((item) => item.type === type)
+      .filter((item, index, all) => all.findIndex((candidate) => `${candidate.source}:${candidate.externalId}` === `${item.source}:${item.externalId}`) === index)
+      .slice(0, 20);
+  }
+
+  private async withDiscoverFallback(items: ContentItem[], type: ContentType, page: number): Promise<ContentItem[]> {
+    if (type === 'movie' || type === 'tv') {
+      return items.length > 0 ? items : this.getSeededFallback(type, page);
+    }
+
+    if (type === 'all') {
+      const hasMovie = items.some((item) => item.type === 'movie');
+      const hasTv = items.some((item) => item.type === 'tv');
+      if (hasMovie && hasTv) return items;
+
+      const [movieFallback, tvFallback] = await Promise.all([
+        hasMovie ? Promise.resolve([]) : this.getSeededFallback('movie', page),
+        hasTv ? Promise.resolve([]) : this.getSeededFallback('tv', page),
+      ]);
+
+      return [...items, ...movieFallback, ...tvFallback].slice(0, 30);
+    }
+
+    return items;
+  }
+
   // Search across all content types
   async search(params: SearchParams): Promise<ContentItem[]> {
     const searchParams = new URLSearchParams();
@@ -363,7 +423,7 @@ class DiscoverAPI {
     if (type !== 'all') params.append('type', type);
 
     const response = await get<ApiResponse<ContentItem>>(`/api/discover/trending?${params}`);
-    return response.items;
+    return this.withDiscoverFallback(response.items, type, page);
   }
 
   // Get trending in India
@@ -399,7 +459,7 @@ class DiscoverAPI {
     if (type !== 'all') params.append('type', type);
 
     const response = await get<ApiResponse<ContentItem>>(`/api/discover/popular?${params}`);
-    return response.items;
+    return this.withDiscoverFallback(response.items, type, page);
   }
 
   // Get top-rated content
@@ -408,7 +468,7 @@ class DiscoverAPI {
     if (type !== 'all') params.append('type', type);
 
     const response = await get<ApiResponse<ContentItem>>(`/api/discover/top-rated?${params}`);
-    return response.items;
+    return this.withDiscoverFallback(response.items, type, page);
   }
 
   // Get content details
