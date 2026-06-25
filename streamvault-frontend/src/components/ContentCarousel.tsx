@@ -167,6 +167,7 @@ interface MultiCarouselProps {
     isLoading?: boolean;
   }[];
   size?: 'small' | 'medium' | 'large';
+  eagerSectionTitles?: string[];
   onContentClick?: (content: ContentItem) => void;
   onAddToLibrary?: (content: ContentItem, status: string) => void;
   className?: string;
@@ -175,6 +176,7 @@ interface MultiCarouselProps {
 export function MultiContentCarousel({
   sections,
   size = 'medium',
+  eagerSectionTitles = [],
   onContentClick,
   onAddToLibrary,
   className = ""
@@ -184,15 +186,27 @@ export function MultiContentCarousel({
   return (
     <div className={`space-y-6 sm:space-y-12 ${className}`}>
       {visibleSections.map((section) => (
-        <LazyCarousel
-          key={section.title}
-          title={section.title}
-          contents={section.contents}
-          isLoading={section.isLoading}
-          size={size}
-          onContentClick={onContentClick}
-          onAddToLibrary={onAddToLibrary}
-        />
+        eagerSectionTitles.includes(section.title) ? (
+          <ContentCarousel
+            key={section.title}
+            title={section.title}
+            contents={section.contents}
+            isLoading={section.isLoading}
+            size={size}
+            onContentClick={onContentClick}
+            onAddToLibrary={onAddToLibrary}
+          />
+        ) : (
+          <LazyCarousel
+            key={section.title}
+            title={section.title}
+            contents={section.contents}
+            isLoading={section.isLoading}
+            size={size}
+            onContentClick={onContentClick}
+            onAddToLibrary={onAddToLibrary}
+          />
+        )
       ))}
     </div>
   );

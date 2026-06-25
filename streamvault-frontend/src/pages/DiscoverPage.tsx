@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Filter, ArrowLeft, Home, CheckCircle, Users, Globe2, Heart } from 'lucide-react';
+import { Search, Filter, ArrowLeft, Home, CheckCircle, Users, Globe2, Heart, Sparkles } from 'lucide-react';
 import HeroBanner from '../components/HeroBanner';
 import ContentCard from '../components/ContentCard';
 import NewsSection from '../components/NewsSection';
-import { MultiContentCarousel, GenreTabs } from '../components/ContentCarousel';
+import { MultiContentCarousel } from '../components/ContentCarousel';
 import PersonProfileModal from '../components/PersonProfileModal';
 import { 
   discoverApi, 
@@ -470,7 +470,7 @@ export default function DiscoverPage() {
 
                 {/* Content Type Filter */}
                 <div className="max-w-5xl mx-auto">
-                  <div className="premium-panel p-3.5 sm:p-6 lg:p-8 space-y-4 sm:space-y-5 overflow-hidden">
+                  <div className="premium-panel p-3.5 sm:p-5 lg:p-6 space-y-3 sm:space-y-4 overflow-hidden">
                     <div className="flex gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide flex-nowrap sm:flex-wrap justify-start sm:justify-center pb-1">
                       {(['all', 'movie', 'tv', 'anime'] as ContentType[]).map((type) => (
                         <button
@@ -489,14 +489,20 @@ export default function DiscoverPage() {
                       ))}
                     </div>
 
-                    {/* Genre Filter */}
-                    {!loadingStates.genres && genres.length > 0 && (
-                      <GenreTabs
-                        genres={['All Genres', ...genres]}
-                        activeGenre={selectedGenre || 'All Genres'}
-                        onGenreChange={(genre) => setSelectedGenre(genre === 'All Genres' ? '' : genre)}
-                      />
-                    )}
+                    <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[#98A2B3] sm:text-xs">
+                      <span className="premium-chip bg-white/[0.03] text-[#F7F1E8]">
+                        <Sparkles className="h-3.5 w-3.5 text-[#FFD48C]" />
+                        Movies and TV are pinned below
+                      </span>
+                      {!loadingStates.genres && genres.length > 0 && (
+                        <button
+                          onClick={() => document.getElementById('discover-genre-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                          className="premium-chip bg-white/[0.03] text-[#A7B0BE] hover:text-[#F7F1E8] transition-colors"
+                        >
+                          Browse all genres
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </>
@@ -703,6 +709,7 @@ export default function DiscoverPage() {
                 <MultiContentCarousel
                   sections={priorityCarouselSections}
                   size="medium"
+                  eagerSectionTitles={['Trending Now', 'Popular Movies', 'Popular TV Shows']}
                   onContentClick={handleContentClick}
                   onAddToLibrary={handleAddToLibrary}
                 />
@@ -726,7 +733,7 @@ export default function DiscoverPage() {
 
           {/* Genre Browse Section */}
           {!searchQuery && !selectedGenre && !loadingStates.genres && (
-            <div className="max-w-6xl mx-auto premium-panel px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+            <div id="discover-genre-grid" className="max-w-6xl mx-auto premium-panel px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
               <h2 className="section-heading text-xl sm:text-4xl text-[#F7F1E8] mb-5 sm:mb-7 tracking-tight flex items-center gap-3">
                 <Filter className="w-5 h-5 text-[#FFD48C]" />
                 Browse by Genre
