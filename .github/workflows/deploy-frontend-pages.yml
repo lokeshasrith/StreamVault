@@ -51,7 +51,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: streamvault-frontend/dist
+          path: dist
 
       - name: Deploy
         uses: actions/deploy-pages@v3
