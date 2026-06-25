@@ -155,8 +155,84 @@ public class ContentApiService : IContentApiService
         if (deduped.Count > 0)
             return deduped;
 
+        var omdb = await BuildOmdbSeedFallbackAsync(seeds, type, page);
+        if (omdb.Count > 0)
+            return omdb;
+
         // Final safety net so movie/tv rails are never empty in production.
         return BuildStaticSeedFallback(seeds, type, page);
+    }
+
+    private async Task<List<Content>> BuildOmdbSeedFallbackAsync((string Title, int? Year)[] seeds, ContentType type, int page = 1)
+    {
+        const int pageSize = 8;
+        var pageSeeds = seeds.Skip((page - 1) * pageSize).Take(pageSize).ToArray();
+        if (pageSeeds.Length == 0) return new List<Content>();
+
+        var results = new List<Content>();
+
+        foreach (var (title, year) in pageSeeds)
+        {
+            try
+            {
+                var omdbUrl = $"https://www.omdbapi.com/?t={Uri.EscapeDataString(title)}&apikey=trilogy";
+                if (year.HasValue) omdbUrl += $"&y={year.Value}";
+
+                var json = await _httpClient.GetStringAsync(omdbUrl);
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                if (!root.TryGetProperty("Response", out var responseProp) || responseProp.GetString() != "True")
+                    continue;
+
+                var poster = root.TryGetProperty("Poster", out var posterProp) ? posterProp.GetString() : null;
+                if (string.IsNullOrWhiteSpace(poster) || poster.Equals("N/A", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var imdbId = root.TryGetProperty("imdbID", out var idProp) ? idProp.GetString() : null;
+                var ratingStr = root.TryGetProperty("imdbRating", out var ratingProp) ? ratingProp.GetString() : null;
+                var genres = root.TryGetProperty("Genre", out var genreProp) ? genreProp.GetString() : null;
+                var plot = root.TryGetProperty("Plot", out var plotProp) ? plotProp.GetString() : null;
+                var yearStr = root.TryGetProperty("Year", out var yearProp) ? yearProp.GetString() : null;
+
+                int? parsedYear = year;
+                if (!parsedYear.HasValue && !string.IsNullOrWhiteSpace(yearStr))
+                {
+                    var firstYear = yearStr.Replace("–", "-").Split('-').FirstOrDefault()?.Trim();
+                    if (int.TryParse(firstYear, out var parsed)) parsedYear = parsed;
+                }
+
+                decimal? rating = null;
+                if (!string.IsNullOrWhiteSpace(ratingStr) &&
+                    decimal.TryParse(ratingStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedRating))
+                {
+                    rating = parsedRating;
+                }
+
+                results.Add(new Content
+                {
+                    ExternalId = string.IsNullOrWhiteSpace(imdbId) ? $"omdb-{type}-{title}" : imdbId,
+                    Source = "IMDB",
+                    Type = type,
+                    Title = title,
+                    Year = parsedYear,
+                    PosterUrl = poster,
+                    BackdropUrl = poster,
+                    Rating = rating,
+                    GenresCsv = genres,
+                    Synopsis = plot
+                });
+            }
+            catch
+            {
+                // Ignore per-title OMDb failures and continue with other seeds.
+            }
+        }
+
+        return results
+            .GroupBy(c => $"{c.Source}:{c.ExternalId}")
+            .Select(g => g.First())
+            .ToList();
     }
 
     private static List<Content> BuildStaticSeedFallback((string Title, int? Year)[] seeds, ContentType type, int page = 1)
@@ -173,38 +249,10 @@ public class ContentApiService : IContentApiService
                 Title = seed.Title,
                 Year = seed.Year,
                 Synopsis = "Curated fallback while upstream movie/TV providers are unavailable.",
-                                GenresCsv = type == ContentType.movie ? "Drama, Action" : "Drama, Mystery",
-                                PosterUrl = BuildFallbackImageDataUri(seed.Title, 342, 513),
-                                BackdropUrl = BuildFallbackImageDataUri(seed.Title, 1280, 720)
+                GenresCsv = type == ContentType.movie ? "Drama, Action" : "Drama, Mystery"
             })
             .ToList();
     }
-
-        private static string BuildFallbackImageDataUri(string title, int width, int height)
-        {
-                var safeTitle = string.IsNullOrWhiteSpace(title) ? "StreamVault" : title;
-                if (safeTitle.Length > 34) safeTitle = safeTitle[..34] + "...";
-
-                var svg = $@"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' viewBox='0 0 {width} {height}'>
-    <defs>
-        <linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>
-            <stop offset='0%' stop-color='#151823'/>
-            <stop offset='55%' stop-color='#232b3f'/>
-            <stop offset='100%' stop-color='#3b2438'/>
-        </linearGradient>
-    </defs>
-    <rect width='{width}' height='{height}' fill='url(#bg)'/>
-    <rect x='20' y='20' width='{width - 40}' height='{height - 40}' rx='22' fill='rgba(255,255,255,0.06)' stroke='rgba(255,255,255,0.22)'/>
-    <text x='{width / 2}' y='{height / 2 - 10}' text-anchor='middle' fill='#ffe2a7' font-family='Segoe UI, Arial, sans-serif' font-size='{Math.Max(18, width / 20)}' font-weight='700'>
-        {System.Security.SecurityElement.Escape(safeTitle)}
-    </text>
-    <text x='{width / 2}' y='{height / 2 + 28}' text-anchor='middle' fill='#c5cbd7' font-family='Segoe UI, Arial, sans-serif' font-size='{Math.Max(12, width / 34)}'>
-        StreamVault Fallback
-    </text>
-</svg>";
-
-                return $"data:image/svg+xml,{Uri.EscapeDataString(svg)}";
-        }
 
     private async Task<string> GetJikanCachedAsync(string url)
     {
