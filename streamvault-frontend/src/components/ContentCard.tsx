@@ -58,6 +58,7 @@ function ContentCard({
   const year = formatYear(content.releaseDate);
   const episodeInfo = formatEpisodes((content as ContentItem & { episodes?: number; seasons?: number }).episodes, (content as ContentItem & { episodes?: number; seasons?: number }).seasons);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const preferredPosterPath = content.posterPath ?? content.backdropPath;
 
   return (
     <div
@@ -66,7 +67,7 @@ function ContentCard({
       {/* Poster Image */}
       <div className="relative w-full h-full overflow-hidden rounded-[24px]" onClick={() => { if (!showStatusMenu) onClick?.(content); }}>
         <img
-          src={getImageUrl(content.posterPath, size === 'large' ? 'large' : 'medium')}
+          src={getImageUrl(preferredPosterPath, size === 'large' ? 'large' : 'medium')}
           alt={content.title}
           loading="lazy"
           decoding="async"
@@ -74,8 +75,18 @@ function ContentCard({
           className="w-full h-full object-cover bg-white/5 transition-transform duration-500 group-hover:scale-[1.04]"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            if (!target.dataset.fallback) {
-              target.dataset.fallback = '1';
+            const stage = target.dataset.fallbackStage ?? '0';
+
+            // Stage 1: if poster failed and backdrop exists, retry with backdrop.
+            if (stage === '0' && content.backdropPath && content.backdropPath !== content.posterPath) {
+              target.dataset.fallbackStage = '1';
+              target.src = getImageUrl(content.backdropPath, size === 'large' ? 'large' : 'medium');
+              return;
+            }
+
+            // Stage 2: final placeholder.
+            if (stage !== '2') {
+              target.dataset.fallbackStage = '2';
               target.src = PLACEHOLDER_POSTER;
             }
           }}
