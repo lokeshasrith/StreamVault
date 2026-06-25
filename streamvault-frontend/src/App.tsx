@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import AuthPage from "./pages/AuthPage";
 import AppShell from "./layout/AppShell";
@@ -105,6 +105,8 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 }
 
 export default function App() {
+  const Router = import.meta.env.PROD ? HashRouter : BrowserRouter;
+
   return (
     <ErrorBoundary>
       <Router basename={import.meta.env.BASE_URL}>
