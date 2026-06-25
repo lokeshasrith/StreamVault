@@ -173,10 +173,38 @@ public class ContentApiService : IContentApiService
                 Title = seed.Title,
                 Year = seed.Year,
                 Synopsis = "Curated fallback while upstream movie/TV providers are unavailable.",
-                GenresCsv = type == ContentType.movie ? "Drama, Action" : "Drama, Mystery"
+                                GenresCsv = type == ContentType.movie ? "Drama, Action" : "Drama, Mystery",
+                                PosterUrl = BuildFallbackImageDataUri(seed.Title, 342, 513),
+                                BackdropUrl = BuildFallbackImageDataUri(seed.Title, 1280, 720)
             })
             .ToList();
     }
+
+        private static string BuildFallbackImageDataUri(string title, int width, int height)
+        {
+                var safeTitle = string.IsNullOrWhiteSpace(title) ? "StreamVault" : title;
+                if (safeTitle.Length > 34) safeTitle = safeTitle[..34] + "...";
+
+                var svg = $@"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' viewBox='0 0 {width} {height}'>
+    <defs>
+        <linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>
+            <stop offset='0%' stop-color='#151823'/>
+            <stop offset='55%' stop-color='#232b3f'/>
+            <stop offset='100%' stop-color='#3b2438'/>
+        </linearGradient>
+    </defs>
+    <rect width='{width}' height='{height}' fill='url(#bg)'/>
+    <rect x='20' y='20' width='{width - 40}' height='{height - 40}' rx='22' fill='rgba(255,255,255,0.06)' stroke='rgba(255,255,255,0.22)'/>
+    <text x='{width / 2}' y='{height / 2 - 10}' text-anchor='middle' fill='#ffe2a7' font-family='Segoe UI, Arial, sans-serif' font-size='{Math.Max(18, width / 20)}' font-weight='700'>
+        {System.Security.SecurityElement.Escape(safeTitle)}
+    </text>
+    <text x='{width / 2}' y='{height / 2 + 28}' text-anchor='middle' fill='#c5cbd7' font-family='Segoe UI, Arial, sans-serif' font-size='{Math.Max(12, width / 34)}'>
+        StreamVault Fallback
+    </text>
+</svg>";
+
+                return $"data:image/svg+xml,{Uri.EscapeDataString(svg)}";
+        }
 
     private async Task<string> GetJikanCachedAsync(string url)
     {
