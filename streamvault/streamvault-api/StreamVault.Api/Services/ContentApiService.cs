@@ -58,6 +58,7 @@ public class ContentApiService : IContentApiService
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _config;
     private readonly IMemoryCache _cache;
+    private readonly ImdbApiClient _imdbApi;
     private readonly string _tmdbApiKey;
     private readonly string _tmdbBaseUrl = "https://api.themoviedb.org/3";
     private readonly string _jikanBaseUrl = "https://api.jikan.moe/v4";
@@ -65,6 +66,34 @@ public class ContentApiService : IContentApiService
     private static readonly TimeSpan TmdbCacheDuration = TimeSpan.FromMinutes(5);
     private static readonly SemaphoreSlim _jikanThrottle = new(1, 1);
     private static readonly SemaphoreSlim _tmdbThrottle = new(8, 8); // Max 8 concurrent TMDB requests
+
+    private static readonly (string Title, int? Year)[] FallbackTrendingMovies =
+    {
+        ("Dune: Part Two", 2024),
+        ("Oppenheimer", 2023),
+        ("Spider-Man: Across the Spider-Verse", 2023),
+        ("The Dark Knight", 2008),
+        ("Inception", 2010),
+        ("Mad Max: Fury Road", 2015),
+        ("Interstellar", 2014),
+        ("Avengers: Endgame", 2019)
+    };
+
+    private static readonly (string Title, int? Year)[] FallbackTrendingTv =
+    {
+        ("Breaking Bad", 2008),
+        ("Game of Thrones", 2011),
+        ("Stranger Things", 2016),
+        ("The Last of Us", 2023),
+        ("Severance", 2022),
+        ("The Bear", 2022),
+        ("Dark", 2017),
+        ("Sherlock", 2010)
+    };
+
+    private bool HasTmdbApiKey =>
+        !string.IsNullOrWhiteSpace(_tmdbApiKey) &&
+        !_tmdbApiKey.Contains("CHANGE_ME", StringComparison.OrdinalIgnoreCase);
 
     private static string ResolveTmdbApiKey(IConfiguration config)
     {
@@ -85,12 +114,43 @@ public class ContentApiService : IContentApiService
         return key ?? string.Empty;
     }
 
-    public ContentApiService(IHttpClientFactory httpClientFactory, IConfiguration config, IMemoryCache cache)
+    public ContentApiService(IHttpClientFactory httpClientFactory, IConfiguration config, IMemoryCache cache, ImdbApiClient imdbApi)
     {
         _httpClient = httpClientFactory.CreateClient();
         _config = config;
         _cache = cache;
+        _imdbApi = imdbApi;
         _tmdbApiKey = ResolveTmdbApiKey(_config);
+    }
+
+    private async Task<List<Content>> BuildImdbFallbackAsync((string Title, int? Year)[] seeds, ContentType type, int page = 1)
+    {
+        const int pageSize = 8;
+        var pageSeeds = seeds.Skip((page - 1) * pageSize).Take(pageSize).ToArray();
+        if (pageSeeds.Length == 0) return new List<Content>();
+
+        var results = new List<Content>();
+
+        foreach (var (title, year) in pageSeeds)
+        {
+            var matches = await _imdbApi.SearchAsync(title);
+            var best = matches.FirstOrDefault(c =>
+                    c.Type == type &&
+                    (year == null || c.Year == year || c.Title.Equals(title, StringComparison.OrdinalIgnoreCase)))
+                ?? matches.FirstOrDefault(c => c.Type == type)
+                ?? matches.FirstOrDefault();
+
+            if (best is null) continue;
+
+            best.Type = type;
+            if (best.Year is null) best.Year = year;
+            results.Add(best);
+        }
+
+        return results
+            .GroupBy(c => $"{c.Source}:{c.ExternalId}")
+            .Select(g => g.First())
+            .ToList();
     }
 
     private async Task<string> GetJikanCachedAsync(string url)
@@ -374,6 +434,9 @@ public class ContentApiService : IContentApiService
 
     public async Task<List<Content>> GetTrendingMoviesAsync(int page = 1, string? region = null)
     {
+        if (!HasTmdbApiKey)
+            return await BuildImdbFallbackAsync(FallbackTrendingMovies, ContentType.movie, page);
+
         try
         {
             var url = $"{_tmdbBaseUrl}/trending/movie/week?api_key={_tmdbApiKey}&page={page}";
@@ -392,6 +455,9 @@ public class ContentApiService : IContentApiService
 
     public async Task<List<Content>> GetTrendingTvShowsAsync(int page = 1, string? region = null)
     {
+        if (!HasTmdbApiKey)
+            return await BuildImdbFallbackAsync(FallbackTrendingTv, ContentType.tv, page);
+
         try
         {
             var url = $"{_tmdbBaseUrl}/trending/tv/week?api_key={_tmdbApiKey}&page={page}";
@@ -427,6 +493,9 @@ public class ContentApiService : IContentApiService
 
     public async Task<List<Content>> GetPopularMoviesAsync(int page = 1, string? region = null)
     {
+        if (!HasTmdbApiKey)
+            return await BuildImdbFallbackAsync(FallbackTrendingMovies, ContentType.movie, page);
+
         try
         {
             var url = $"{_tmdbBaseUrl}/movie/popular?api_key={_tmdbApiKey}&page={page}";
@@ -445,6 +514,9 @@ public class ContentApiService : IContentApiService
 
     public async Task<List<Content>> GetPopularTvShowsAsync(int page = 1, string? region = null)
     {
+        if (!HasTmdbApiKey)
+            return await BuildImdbFallbackAsync(FallbackTrendingTv, ContentType.tv, page);
+
         try
         {
             var url = $"{_tmdbBaseUrl}/tv/popular?api_key={_tmdbApiKey}&page={page}";
@@ -480,6 +552,9 @@ public class ContentApiService : IContentApiService
 
     public async Task<List<Content>> GetTopRatedMoviesAsync(int page = 1, string? region = null)
     {
+        if (!HasTmdbApiKey)
+            return await BuildImdbFallbackAsync(FallbackTrendingMovies, ContentType.movie, page);
+
         try
         {
             var url = $"{_tmdbBaseUrl}/movie/top_rated?api_key={_tmdbApiKey}&page={page}";
@@ -498,6 +573,9 @@ public class ContentApiService : IContentApiService
 
     public async Task<List<Content>> GetTopRatedTvShowsAsync(int page = 1, string? region = null)
     {
+        if (!HasTmdbApiKey)
+            return await BuildImdbFallbackAsync(FallbackTrendingTv, ContentType.tv, page);
+
         try
         {
             var url = $"{_tmdbBaseUrl}/tv/top_rated?api_key={_tmdbApiKey}&page={page}";
