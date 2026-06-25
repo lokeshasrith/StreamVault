@@ -418,6 +418,20 @@ export default function DiscoverPage() {
     }] : [])
   ], [likedRecommendedContent, trendingContent, recommendedContent, trendingIndia, hindiContent, teluguContent, tamilContent, malayalamContent, kannadaContent, popularMovies, popularTVShows, popularAnime, topRatedContent, topRankedAnime, loadingStates]);
 
+  const priorityCarouselSections = useMemo(
+    () => carouselSections.filter((section) => (
+      section.title === 'Popular Movies'
+      || section.title === 'Popular TV Shows'
+      || section.title === 'Trending Now'
+    )),
+    [carouselSections],
+  );
+
+  const secondaryCarouselSections = useMemo(
+    () => carouselSections.filter((section) => !priorityCarouselSections.some((priority) => priority.title === section.title)),
+    [carouselSections, priorityCarouselSections],
+  );
+
   return (
     <div className="discover-page min-h-screen bg-[#0F1014] pt-11 sm:pt-16 md:pt-20 pb-20 md:pb-8">
 
@@ -685,6 +699,15 @@ export default function DiscoverPage() {
           {/* Content Carousels */}
           {!searchQuery && !selectedGenre && (
             <>
+              <div>
+                <MultiContentCarousel
+                  sections={priorityCarouselSections}
+                  size="medium"
+                  onContentClick={handleContentClick}
+                  onAddToLibrary={handleAddToLibrary}
+                />
+              </div>
+
               {/* Entertainment News Section */}
               {(loadingStates.news || newsItems.length > 0) && (
                 <NewsSection news={newsItems} isLoading={loadingStates.news} />
@@ -692,7 +715,7 @@ export default function DiscoverPage() {
 
               <div>
                 <MultiContentCarousel
-                  sections={carouselSections}
+                  sections={secondaryCarouselSections}
                   size="medium"
                   onContentClick={handleContentClick}
                   onAddToLibrary={handleAddToLibrary}

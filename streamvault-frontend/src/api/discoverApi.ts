@@ -1,7 +1,7 @@
 import { get } from "./http";
 
-// Use empty string so all /api/* calls go through Vite proxy (works on mobile/devtunnel)
-const API_BASE = '';
+// Use the deployed API origin in production and the Vite proxy in local development.
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
 
 // Updated ContentItem interface to match backend
 export interface ContentItem {
@@ -246,6 +246,7 @@ const DIRECT_IMAGE_HOSTS = new Set([
   'deadline.com',
   'hollywoodreporter.com',
   'www.hollywoodreporter.com',
+  'cdn.myanimelist.net',
   'animenewsnetwork.com',
   'www.animenewsnetwork.com',
   'hindustantimes.com',
