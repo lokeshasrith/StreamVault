@@ -147,9 +147,34 @@ public class ContentApiService : IContentApiService
             results.Add(best);
         }
 
-        return results
+        var deduped = results
             .GroupBy(c => $"{c.Source}:{c.ExternalId}")
             .Select(g => g.First())
+            .ToList();
+
+        if (deduped.Count > 0)
+            return deduped;
+
+        // Final safety net so movie/tv rails are never empty in production.
+        return BuildStaticSeedFallback(seeds, type, page);
+    }
+
+    private static List<Content> BuildStaticSeedFallback((string Title, int? Year)[] seeds, ContentType type, int page = 1)
+    {
+        const int pageSize = 8;
+        return seeds
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select((seed, idx) => new Content
+            {
+                ExternalId = $"fallback-{type}-{page}-{idx}",
+                Source = type == ContentType.movie ? "TMDB_MOVIE" : "TMDB_TV",
+                Type = type,
+                Title = seed.Title,
+                Year = seed.Year,
+                Synopsis = "Curated fallback while upstream movie/TV providers are unavailable.",
+                GenresCsv = type == ContentType.movie ? "Drama, Action" : "Drama, Mystery"
+            })
             .ToList();
     }
 
@@ -444,12 +469,15 @@ public class ContentApiService : IContentApiService
             var response = await GetTmdbCachedAsync(url);
             var tmdbResponse = JsonSerializer.Deserialize<TmdbSearchResponse>(response, JsonOptions());
             
-            return tmdbResponse?.Results?.Select(item => MapTmdbMovieToContent(item)).ToList() ?? new List<Content>();
+            var mapped = tmdbResponse?.Results?.Select(MapTmdbMovieToContent).ToList() ?? new List<Content>();
+            return mapped.Count > 0
+                ? mapped
+                : await BuildImdbFallbackAsync(FallbackTrendingMovies, ContentType.movie, page);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting trending movies: {ex.Message}");
-            return new List<Content>();
+            return await BuildImdbFallbackAsync(FallbackTrendingMovies, ContentType.movie, page);
         }
     }
 
@@ -465,12 +493,15 @@ public class ContentApiService : IContentApiService
             var response = await GetTmdbCachedAsync(url);
             var tmdbResponse = JsonSerializer.Deserialize<TmdbTvSearchResponse>(response, JsonOptions());
             
-            return tmdbResponse?.Results?.Select(item => MapTmdbTvToContent(item)).ToList() ?? new List<Content>();
+            var mapped = tmdbResponse?.Results?.Select(MapTmdbTvToContent).ToList() ?? new List<Content>();
+            return mapped.Count > 0
+                ? mapped
+                : await BuildImdbFallbackAsync(FallbackTrendingTv, ContentType.tv, page);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting trending TV shows: {ex.Message}");
-            return new List<Content>();
+            return await BuildImdbFallbackAsync(FallbackTrendingTv, ContentType.tv, page);
         }
     }
 
@@ -503,12 +534,15 @@ public class ContentApiService : IContentApiService
             var response = await GetTmdbCachedAsync(url);
             var tmdbResponse = JsonSerializer.Deserialize<TmdbSearchResponse>(response, JsonOptions());
             
-            return tmdbResponse?.Results?.Select(item => MapTmdbMovieToContent(item)).ToList() ?? new List<Content>();
+            var mapped = tmdbResponse?.Results?.Select(MapTmdbMovieToContent).ToList() ?? new List<Content>();
+            return mapped.Count > 0
+                ? mapped
+                : await BuildImdbFallbackAsync(FallbackTrendingMovies, ContentType.movie, page);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting popular movies: {ex.Message}");
-            return new List<Content>();
+            return await BuildImdbFallbackAsync(FallbackTrendingMovies, ContentType.movie, page);
         }
     }
 
@@ -524,12 +558,15 @@ public class ContentApiService : IContentApiService
             var response = await GetTmdbCachedAsync(url);
             var tmdbResponse = JsonSerializer.Deserialize<TmdbTvSearchResponse>(response, JsonOptions());
             
-            return tmdbResponse?.Results?.Select(item => MapTmdbTvToContent(item)).ToList() ?? new List<Content>();
+            var mapped = tmdbResponse?.Results?.Select(MapTmdbTvToContent).ToList() ?? new List<Content>();
+            return mapped.Count > 0
+                ? mapped
+                : await BuildImdbFallbackAsync(FallbackTrendingTv, ContentType.tv, page);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting popular TV shows: {ex.Message}");
-            return new List<Content>();
+            return await BuildImdbFallbackAsync(FallbackTrendingTv, ContentType.tv, page);
         }
     }
 
@@ -562,12 +599,15 @@ public class ContentApiService : IContentApiService
             var response = await GetTmdbCachedAsync(url);
             var tmdbResponse = JsonSerializer.Deserialize<TmdbSearchResponse>(response, JsonOptions());
             
-            return tmdbResponse?.Results?.Select(item => MapTmdbMovieToContent(item)).ToList() ?? new List<Content>();
+            var mapped = tmdbResponse?.Results?.Select(MapTmdbMovieToContent).ToList() ?? new List<Content>();
+            return mapped.Count > 0
+                ? mapped
+                : await BuildImdbFallbackAsync(FallbackTrendingMovies, ContentType.movie, page);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting top rated movies: {ex.Message}");
-            return new List<Content>();
+            return await BuildImdbFallbackAsync(FallbackTrendingMovies, ContentType.movie, page);
         }
     }
 
@@ -583,12 +623,15 @@ public class ContentApiService : IContentApiService
             var response = await GetTmdbCachedAsync(url);
             var tmdbResponse = JsonSerializer.Deserialize<TmdbTvSearchResponse>(response, JsonOptions());
             
-            return tmdbResponse?.Results?.Select(item => MapTmdbTvToContent(item)).ToList() ?? new List<Content>();
+            var mapped = tmdbResponse?.Results?.Select(MapTmdbTvToContent).ToList() ?? new List<Content>();
+            return mapped.Count > 0
+                ? mapped
+                : await BuildImdbFallbackAsync(FallbackTrendingTv, ContentType.tv, page);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting top rated TV shows: {ex.Message}");
-            return new List<Content>();
+            return await BuildImdbFallbackAsync(FallbackTrendingTv, ContentType.tv, page);
         }
     }
 
