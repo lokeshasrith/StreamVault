@@ -105,15 +105,21 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 }
 
 export default function App() {
-  const Router = import.meta.env.PROD ? HashRouter : BrowserRouter;
-
   return (
     <ErrorBoundary>
-      <Router basename={import.meta.env.BASE_URL}>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </Router>
+      {import.meta.env.PROD ? (
+        <HashRouter>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </HashRouter>
+      ) : (
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BrowserRouter>
+      )}
     </ErrorBoundary>
   );
 }
