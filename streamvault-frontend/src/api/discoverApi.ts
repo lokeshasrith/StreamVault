@@ -354,10 +354,142 @@ const FALLBACK_TV_QUERIES = [
   'Sherlock',
 ];
 
+const STATIC_FALLBACK_MOVIES: ContentItem[] = [
+  {
+    externalId: '693134',
+    title: 'Dune: Part Two',
+    overview: 'Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family.',
+    posterPath: undefined,
+    backdropPath: undefined,
+    releaseDate: '2024-03-01',
+    voteAverage: 8.6,
+    voteCount: 0,
+    popularity: 0,
+    genreIds: [],
+    genres: ['Science Fiction', 'Adventure'],
+    source: 'tmdb',
+    type: 'movie',
+  },
+  {
+    externalId: '872585',
+    title: 'Oppenheimer',
+    overview: 'The story of J. Robert Oppenheimer and the creation of the atomic bomb during World War II.',
+    posterPath: undefined,
+    backdropPath: undefined,
+    releaseDate: '2023-07-21',
+    voteAverage: 8.4,
+    voteCount: 0,
+    popularity: 0,
+    genreIds: [],
+    genres: ['Drama', 'History'],
+    source: 'tmdb',
+    type: 'movie',
+  },
+  {
+    externalId: '27205',
+    title: 'Inception',
+    overview: 'A thief who steals corporate secrets through dream-sharing technology is given the inverse task of planting an idea.',
+    posterPath: undefined,
+    backdropPath: undefined,
+    releaseDate: '2010-07-16',
+    voteAverage: 8.8,
+    voteCount: 0,
+    popularity: 0,
+    genreIds: [],
+    genres: ['Action', 'Science Fiction'],
+    source: 'tmdb',
+    type: 'movie',
+  },
+  {
+    externalId: '157336',
+    title: 'Interstellar',
+    overview: 'A team of explorers travel through a wormhole in space in an attempt to ensure humanity’s survival.',
+    posterPath: undefined,
+    backdropPath: undefined,
+    releaseDate: '2014-11-07',
+    voteAverage: 8.7,
+    voteCount: 0,
+    popularity: 0,
+    genreIds: [],
+    genres: ['Adventure', 'Drama'],
+    source: 'tmdb',
+    type: 'movie',
+  },
+];
+
+const STATIC_FALLBACK_TV: ContentItem[] = [
+  {
+    externalId: '1396',
+    title: 'Breaking Bad',
+    overview: 'A high school chemistry teacher turned meth producer partners with a former student.',
+    posterPath: undefined,
+    backdropPath: undefined,
+    releaseDate: '2008-01-20',
+    voteAverage: 9.5,
+    voteCount: 0,
+    popularity: 0,
+    genreIds: [],
+    genres: ['Drama', 'Crime'],
+    source: 'tmdb',
+    type: 'tv',
+  },
+  {
+    externalId: '1399',
+    title: 'Game of Thrones',
+    overview: 'Noble families vie for control of the Iron Throne while an ancient enemy returns.',
+    posterPath: undefined,
+    backdropPath: undefined,
+    releaseDate: '2011-04-17',
+    voteAverage: 8.9,
+    voteCount: 0,
+    popularity: 0,
+    genreIds: [],
+    genres: ['Fantasy', 'Drama'],
+    source: 'tmdb',
+    type: 'tv',
+  },
+  {
+    externalId: '100088',
+    title: 'The Last of Us',
+    overview: 'A hardened survivor escorts a teenage girl across a ravaged America.',
+    posterPath: undefined,
+    backdropPath: undefined,
+    releaseDate: '2023-01-15',
+    voteAverage: 8.8,
+    voteCount: 0,
+    popularity: 0,
+    genreIds: [],
+    genres: ['Drama', 'Sci-Fi & Fantasy'],
+    source: 'tmdb',
+    type: 'tv',
+  },
+  {
+    externalId: '66732',
+    title: 'Stranger Things',
+    overview: 'When a young boy vanishes, a small town uncovers a mystery involving secret experiments and supernatural forces.',
+    posterPath: undefined,
+    backdropPath: undefined,
+    releaseDate: '2016-07-15',
+    voteAverage: 8.6,
+    voteCount: 0,
+    popularity: 0,
+    genreIds: [],
+    genres: ['Drama', 'Mystery'],
+    source: 'tmdb',
+    type: 'tv',
+  },
+];
+
 // ─── Main API class ───────────────────────────────────────────────────────────
 
 class DiscoverAPI {
   private async getSeededFallback(type: 'movie' | 'tv', page: number = 1): Promise<ContentItem[]> {
+    const staticSeeds = type === 'movie' ? STATIC_FALLBACK_MOVIES : STATIC_FALLBACK_TV;
+    if (staticSeeds.length > 0) {
+      const pageSize = 4;
+      return staticSeeds.slice((page - 1) * pageSize, page * pageSize);
+    }
+
     const seeds = type === 'movie' ? FALLBACK_MOVIE_QUERIES : FALLBACK_TV_QUERIES;
     const pageSize = 4;
     const pageSeeds = seeds.slice((page - 1) * pageSize, page * pageSize);
