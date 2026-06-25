@@ -14,5 +14,5 @@ jobs:
     steps:
       - name: Ping backend health endpoint
         run: |
-          curl -s -X GET https://streamvault-api.onrender.com/api/health || true
+          curl -s -X GET https://streamvault-api-w9z8.onrender.com/api/health || true
           echo "Backend health check completed"
