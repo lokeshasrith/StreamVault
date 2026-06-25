@@ -256,6 +256,8 @@ const DIRECT_IMAGE_HOSTS = new Set([
   'indianexpress.com',
   'www.indianexpress.com',
   'image.tmdb.org',
+  'm.media-amazon.com',
+  'ia.media-imdb.com',
 ]);
 
 function buildProxyImageUrl(url: string): string {
