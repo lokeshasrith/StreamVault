@@ -357,12 +357,20 @@ public sealed class DiscoverController : ControllerBase
             var langResults = await Task.WhenAll(langTasks);
             foreach (var r in langResults) MergeUnique(r);
 
-            // Fallback: when TMDB is unavailable/misconfigured, keep this rail useful
-            // with globally trending anime content instead of returning an empty section.
-            if (results.Count == 0 && (string.IsNullOrWhiteSpace(type) || type.Equals("all", StringComparison.OrdinalIgnoreCase)))
+            // Fallback: keep India rail strictly movie/TV (no anime injection).
+            if (results.Count == 0)
             {
-                var animeFallback = await _contentApiService.GetTrendingAnimeAsync(page);
-                MergeUnique(animeFallback.Take(20));
+                if (string.IsNullOrWhiteSpace(type) || type.Equals("all", StringComparison.OrdinalIgnoreCase) || type.Equals("movie", StringComparison.OrdinalIgnoreCase))
+                {
+                    var movieFallback = await _contentApiService.GetPopularMoviesAsync(page, region: "IN");
+                    MergeUnique(movieFallback.Take(20));
+                }
+
+                if (string.IsNullOrWhiteSpace(type) || type.Equals("all", StringComparison.OrdinalIgnoreCase) || type.Equals("tv", StringComparison.OrdinalIgnoreCase))
+                {
+                    var tvFallback = await _contentApiService.GetPopularTvShowsAsync(page, region: "IN");
+                    MergeUnique(tvFallback.Take(20));
+                }
             }
 
             return Ok(WrapItems(results));
