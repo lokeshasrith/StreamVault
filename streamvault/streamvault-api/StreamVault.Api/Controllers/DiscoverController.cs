@@ -35,6 +35,26 @@ public sealed class DiscoverController : ControllerBase
     private readonly ApplicationDbContext _db;
     private readonly ILogger<DiscoverController> _logger;
 
+    private static readonly (string Title, int? Year)[] IndianTrendingMovieSeeds =
+    {
+        ("Kalki 2898 AD", 2024),
+        ("Stree 2", 2024),
+        ("Fighter", 2024),
+        ("Animal", 2023),
+        ("Jawan", 2023),
+        ("Pathaan", 2023),
+        ("Leo", 2023),
+        ("Salaar", 2023),
+        ("12th Fail", 2023),
+        ("Munjya", 2024),
+        ("Laapataa Ladies", 2024),
+        ("Crew", 2024),
+        ("Kill", 2024),
+        ("Article 370", 2024),
+        ("Sita Ramam", 2022),
+        ("K.G.F: Chapter 2", 2022),
+    };
+
     public DiscoverController(
         IContentApiService contentApiService,
         YouTubeClient youtube,
@@ -79,6 +99,52 @@ public sealed class DiscoverController : ControllerBase
         var intersect = wordsA.Intersect(wordsB).Count();
         var smaller = Math.Min(wordsA.Count, wordsB.Count);
         return (double)intersect / smaller >= 0.7;
+    }
+
+    private async Task<List<Content>> BuildIndianMovieFallbackAsync(int page, CancellationToken ct)
+    {
+        const int pageSize = 12;
+        var pageSeeds = IndianTrendingMovieSeeds
+            .Skip((Math.Max(page, 1) - 1) * pageSize)
+            .Take(pageSize)
+            .ToArray();
+
+        if (pageSeeds.Length == 0)
+            pageSeeds = IndianTrendingMovieSeeds.Take(pageSize).ToArray();
+
+        var results = new List<Content>();
+
+        foreach (var (title, year) in pageSeeds)
+        {
+            try
+            {
+                var query = year.HasValue ? $"{title} {year.Value}" : title;
+                var matches = await _imdbApi.SearchAsync(query, ct);
+
+                var best = matches.FirstOrDefault(c =>
+                               c.Type == ContentType.movie &&
+                               (year == null || c.Year == year || c.Title.Equals(title, StringComparison.OrdinalIgnoreCase)))
+                           ?? matches.FirstOrDefault(c => c.Type == ContentType.movie)
+                           ?? matches.FirstOrDefault();
+
+                if (best is null) continue;
+
+                best.Type = ContentType.movie;
+                best.Source = "IMDB_MOVIE";
+                if (best.Year is null) best.Year = year;
+                results.Add(best);
+            }
+            catch
+            {
+                // Ignore per-title fallback errors.
+            }
+        }
+
+        return results
+            .Where(c => !string.IsNullOrWhiteSpace(c.ExternalId) && !string.IsNullOrWhiteSpace(c.Title))
+            .GroupBy(c => $"{c.Source}:{c.ExternalId}")
+            .Select(g => g.First())
+            .ToList();
     }
 
     // Maps Content model to the shape the frontend ContentItem interface expects
@@ -357,6 +423,30 @@ public sealed class DiscoverController : ControllerBase
             var langResults = await Task.WhenAll(langTasks);
             foreach (var r in langResults) MergeUnique(r);
 
+            // If the "recent" window is sparse, broaden to non-recent India discover feeds.
+            if (results.Count < 12)
+            {
+                var broadenedTasks = new List<Task<List<Content>>>();
+
+                if (string.IsNullOrWhiteSpace(type) || type.Equals("movie", StringComparison.OrdinalIgnoreCase))
+                    broadenedTasks.Add(_contentApiService.DiscoverMoviesByCountryAsync("IN", page));
+
+                if (string.IsNullOrWhiteSpace(type) || type.Equals("tv", StringComparison.OrdinalIgnoreCase))
+                    broadenedTasks.Add(_contentApiService.DiscoverTvByCountryAsync("IN", page));
+
+                foreach (var lang in indianLangs)
+                {
+                    if (string.IsNullOrWhiteSpace(type) || type.Equals("movie", StringComparison.OrdinalIgnoreCase))
+                        broadenedTasks.Add(_contentApiService.DiscoverMoviesByLanguageAsync(lang, page));
+
+                    if (string.IsNullOrWhiteSpace(type) || type.Equals("tv", StringComparison.OrdinalIgnoreCase))
+                        broadenedTasks.Add(_contentApiService.DiscoverTvByLanguageAsync(lang, page));
+                }
+
+                var broadenedResults = await Task.WhenAll(broadenedTasks);
+                foreach (var r in broadenedResults) MergeUnique(r);
+            }
+
             // Fallback: keep India rail strictly movie/TV (no anime injection).
             if (results.Count == 0)
             {
@@ -370,6 +460,13 @@ public sealed class DiscoverController : ControllerBase
                 {
                     var tvFallback = await _contentApiService.GetPopularTvShowsAsync(page, region: "IN");
                     MergeUnique(tvFallback.Take(20));
+                }
+
+                // Final fallback if provider/keys are down: seeded Indian movie set from IMDb.
+                if (results.Count == 0)
+                {
+                    var imdbFallback = await BuildIndianMovieFallbackAsync(page, ct);
+                    MergeUnique(imdbFallback);
                 }
             }
 
@@ -502,6 +599,23 @@ public sealed class DiscoverController : ControllerBase
         try
         {
             var src = source.ToUpperInvariant();
+
+            // When frontend routes as /content/movie|tv/tt..., resolve IMDb IDs to TMDB first.
+            if (id.StartsWith("tt", StringComparison.OrdinalIgnoreCase))
+            {
+                var match = await _contentApiService.FindByImdbIdAsync(id);
+                if (match != null)
+                {
+                    if (src is "TMDB_TV" or "TV" or "IMDB_TV")
+                        return await GetDetails("TV", match.Value.tmdbId);
+
+                    if (src is "TMDB_MOVIE" or "MOVIE" or "IMDB_MOVIE")
+                        return await GetDetails("MOVIE", match.Value.tmdbId);
+
+                    var resolvedSource = match.Value.mediaType == "tv" ? "TV" : "MOVIE";
+                    return await GetDetails(resolvedSource, match.Value.tmdbId);
+                }
+            }
 
             // IMDB source: resolve IMDb ID to TMDB, then redirect to the appropriate handler
             if ((src == "IMDB" || src == "IMDB_MOVIE" || src == "IMDB_TV") && id.StartsWith("tt", StringComparison.OrdinalIgnoreCase))
@@ -1762,6 +1876,43 @@ public sealed class DiscoverController : ControllerBase
             resolvedImdbId = omdbRatings.ImdbId;
             imdbRating = omdbRatings.ImdbRating.Value;
             imdbVoteCount = omdbRatings.ImdbVotes ?? 0;
+        }
+
+        // Step 3: Fallback to imdb-api worker when OMDb misses IMDb rating.
+        if (imdbRating == null)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(resolvedImdbId))
+                {
+                    var imdbTitle = await _imdbApi.GetTitleDetailsAsync(resolvedImdbId, ct);
+                    if (imdbTitle?.Rating is > 0)
+                        imdbRating = (double)imdbTitle.Rating.Value;
+                }
+                else
+                {
+                    var candidates = await _imdbApi.SearchAsync(title, ct);
+                    var best = candidates
+                        .Where(c => c.ExternalId.StartsWith("tt", StringComparison.OrdinalIgnoreCase))
+                        .OrderByDescending(c =>
+                            (year.HasValue && c.Year == year.Value ? 3 : 0) +
+                            (c.Title.Equals(title, StringComparison.OrdinalIgnoreCase) ? 2 : 0) +
+                            (c.Title.Contains(title, StringComparison.OrdinalIgnoreCase) ? 1 : 0))
+                        .FirstOrDefault();
+
+                    if (best != null)
+                    {
+                        resolvedImdbId = best.ExternalId;
+                        var imdbTitle = await _imdbApi.GetTitleDetailsAsync(best.ExternalId, ct);
+                        if (imdbTitle?.Rating is > 0)
+                            imdbRating = (double)imdbTitle.Rating.Value;
+                    }
+                }
+            }
+            catch
+            {
+                // Optional fallback only.
+            }
         }
 
         return Ok(new

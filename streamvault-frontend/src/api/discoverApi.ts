@@ -17,7 +17,7 @@ export interface ContentItem {
   popularity: number;
   genreIds: number[];
   genres: string[];
-  source: 'tmdb' | 'jikan' | 'library';
+  source: 'tmdb' | 'jikan' | 'imdb' | 'library';
   type: 'movie' | 'tv' | 'anime';
 }
 

@@ -145,7 +145,7 @@ export default function DiscoverPage() {
 
         // Batch 3: Indian/regional content
         const [trendingIndiaRes, hindiRes, teluguRes, tamilRes, malayalamRes, kannadaRes] = await Promise.allSettled([
-          discoverApi.getTrendingIndia(),
+          discoverApi.getTrendingIndia('movie'),
           discoverApi.getByLanguage('hi'),
           discoverApi.getByLanguage('te'),
           discoverApi.getByLanguage('ta'),
@@ -317,7 +317,12 @@ export default function DiscoverPage() {
     try {
       const payload: UpsertPayload = {
         externalId: String(content.externalId),
-        source: content.source === 'jikan' ? 'MAL_ANIME' : `TMDB_${content.type.toUpperCase()}`,
+        source:
+          content.source === 'jikan'
+            ? 'MAL_ANIME'
+            : content.source === 'imdb'
+              ? `IMDB_${content.type.toUpperCase()}`
+              : `TMDB_${content.type.toUpperCase()}`,
         type: content.type,
         title: content.title,
         posterUrl: content.posterPath ?? undefined,
