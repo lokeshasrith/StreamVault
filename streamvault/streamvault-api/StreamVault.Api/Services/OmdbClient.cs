@@ -55,6 +55,55 @@ public sealed class OmdbClient
     }
 
     /// <summary>
+    /// Fetch full title details by IMDb ID for details-page fallback rendering.
+    /// </summary>
+    public async Task<OmdbTitleDetails?> GetTitleDetailsByImdbIdAsync(string imdbId, CancellationToken ct = default)
+    {
+        var cacheKey = $"omdb:title:{imdbId}";
+        if (_cache.TryGetValue(cacheKey, out OmdbTitleDetails? cached))
+            return cached;
+
+        try
+        {
+            var url = $"{BaseUrl}?i={Uri.EscapeDataString(imdbId)}&apikey={ApiKey}&plot=full";
+            var json = await _http.GetFromJsonAsync<JsonElement>(url, ct);
+
+            if (json.TryGetProperty("Response", out var resp) && resp.GetString() == "False")
+                return null;
+
+            var result = new OmdbTitleDetails
+            {
+                ImdbId = imdbId,
+                Title = json.TryGetProperty("Title", out var title) ? (title.GetString() ?? "") : "",
+                Year = json.TryGetProperty("Year", out var year) ? (year.GetString() ?? "") : "",
+                Released = json.TryGetProperty("Released", out var released) ? (released.GetString() ?? "") : "",
+                Runtime = json.TryGetProperty("Runtime", out var runtime) ? (runtime.GetString() ?? "") : "",
+                Genre = json.TryGetProperty("Genre", out var genre) ? (genre.GetString() ?? "") : "",
+                Plot = json.TryGetProperty("Plot", out var plot) ? (plot.GetString() ?? "") : "",
+                Poster = json.TryGetProperty("Poster", out var poster) ? (poster.GetString() ?? "") : "",
+                Director = json.TryGetProperty("Director", out var director) ? (director.GetString() ?? "") : "",
+                Type = json.TryGetProperty("Type", out var type) ? (type.GetString() ?? "") : "",
+            };
+
+            if (json.TryGetProperty("imdbRating", out var rating))
+            {
+                var ratingStr = rating.GetString();
+                if (double.TryParse(ratingStr, System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var parsedRating) && parsedRating > 0)
+                    result.ImdbRating = parsedRating;
+            }
+
+            _cache.Set(cacheKey, result, TimeSpan.FromHours(6));
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "OMDb GetTitleDetailsByImdbIdAsync failed for {ImdbId}", imdbId);
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Fetch ratings by title (and optional year).
     /// </summary>
     public async Task<OmdbRatings?> SearchByTitleAsync(string title, int? year = null, CancellationToken ct = default)
@@ -185,4 +234,19 @@ public class OmdbRatings
     public long? ImdbVotes { get; set; }
     public int? Metascore { get; set; }
     public int? RottenTomatoesScore { get; set; }
+}
+
+public class OmdbTitleDetails
+{
+    public string ImdbId { get; set; } = "";
+    public string Title { get; set; } = "";
+    public string Year { get; set; } = "";
+    public string Released { get; set; } = "";
+    public string Runtime { get; set; } = "";
+    public string Genre { get; set; } = "";
+    public string Plot { get; set; } = "";
+    public string Poster { get; set; } = "";
+    public string Director { get; set; } = "";
+    public string Type { get; set; } = "";
+    public double? ImdbRating { get; set; }
 }

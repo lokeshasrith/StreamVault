@@ -649,6 +649,51 @@ public sealed class DiscoverController : ControllerBase
                         cast = Array.Empty<object>()
                     });
                 }
+
+                var omdbTitle = await _omdb.GetTitleDetailsByImdbIdAsync(id, HttpContext.RequestAborted);
+                if (omdbTitle != null)
+                {
+                    var omdbType = src is "TMDB_TV" or "TV" or "IMDB_TV" || string.Equals(omdbTitle.Type, "series", StringComparison.OrdinalIgnoreCase)
+                        ? "tv"
+                        : "movie";
+
+                    var releaseDate = !string.IsNullOrWhiteSpace(omdbTitle.Released) &&
+                                      !string.Equals(omdbTitle.Released, "N/A", StringComparison.OrdinalIgnoreCase)
+                        ? omdbTitle.Released
+                        : omdbTitle.Year;
+
+                    var genres = string.IsNullOrWhiteSpace(omdbTitle.Genre)
+                        ? Array.Empty<string>()
+                        : omdbTitle.Genre.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                    var director = string.IsNullOrWhiteSpace(omdbTitle.Director) || string.Equals(omdbTitle.Director, "N/A", StringComparison.OrdinalIgnoreCase)
+                        ? null
+                        : omdbTitle.Director;
+
+                    return Ok(new
+                    {
+                        externalId = omdbTitle.ImdbId,
+                        title = omdbTitle.Title ?? "",
+                        overview = string.Equals(omdbTitle.Plot, "N/A", StringComparison.OrdinalIgnoreCase) ? "" : (omdbTitle.Plot ?? ""),
+                        posterPath = string.IsNullOrWhiteSpace(omdbTitle.Poster) || string.Equals(omdbTitle.Poster, "N/A", StringComparison.OrdinalIgnoreCase) ? null : omdbTitle.Poster,
+                        backdropPath = string.IsNullOrWhiteSpace(omdbTitle.Poster) || string.Equals(omdbTitle.Poster, "N/A", StringComparison.OrdinalIgnoreCase) ? null : omdbTitle.Poster,
+                        releaseDate = releaseDate ?? "",
+                        voteAverage = omdbTitle.ImdbRating ?? 0,
+                        voteCount = 0,
+                        genres,
+                        source = "imdb",
+                        type = omdbType,
+                        imdbId = omdbTitle.ImdbId,
+                        runtime = (int?)null,
+                        status = (string?)null,
+                        tagline = (string?)null,
+                        originalLanguage = (string?)null,
+                        trailerUrl = (string?)null,
+                        director,
+                        writers = Array.Empty<string>(),
+                        cast = Array.Empty<object>()
+                    });
+                }
             }
 
             // IMDB source: resolve IMDb ID to TMDB, then redirect to the appropriate handler
