@@ -670,6 +670,25 @@ public sealed class DiscoverController : ControllerBase
                         ? null
                         : omdbTitle.Director;
 
+                    var writers = string.IsNullOrWhiteSpace(omdbTitle.Writer) || string.Equals(omdbTitle.Writer, "N/A", StringComparison.OrdinalIgnoreCase)
+                        ? Array.Empty<string>()
+                        : omdbTitle.Writer.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                    var cast = string.IsNullOrWhiteSpace(omdbTitle.Actors) || string.Equals(omdbTitle.Actors, "N/A", StringComparison.OrdinalIgnoreCase)
+                        ? Array.Empty<object>()
+                        : omdbTitle.Actors
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                            .Take(12)
+                            .Select(name => (object)new
+                            {
+                                id = 0,
+                                name,
+                                character = "Cast",
+                                profilePath = (string?)null,
+                                idSource = (string?)null
+                            })
+                            .ToArray();
+
                     return Ok(new
                     {
                         externalId = omdbTitle.ImdbId,
@@ -690,8 +709,8 @@ public sealed class DiscoverController : ControllerBase
                         originalLanguage = (string?)null,
                         trailerUrl = (string?)null,
                         director,
-                        writers = Array.Empty<string>(),
-                        cast = Array.Empty<object>()
+                        writers,
+                        cast
                     });
                 }
             }
@@ -1027,7 +1046,17 @@ public sealed class DiscoverController : ControllerBase
         {
             if (type.Equals("movie", StringComparison.OrdinalIgnoreCase))
             {
-                var recs = await _contentApiService.GetMovieRecommendationsAsync(id);
+                var tmdbId = id;
+                if (id.StartsWith("tt", StringComparison.OrdinalIgnoreCase))
+                {
+                    var mapped = await _contentApiService.FindByImdbIdAsync(id);
+                    if (mapped?.mediaType == "movie") tmdbId = mapped.Value.tmdbId;
+                }
+
+                var recs = tmdbId != id || !id.StartsWith("tt", StringComparison.OrdinalIgnoreCase)
+                    ? await _contentApiService.GetMovieRecommendationsAsync(tmdbId)
+                    : null;
+
                 var items = recs?.Results?.Take(12).Select(r => new
                 {
                     externalId = r.Id.ToString(),
@@ -1042,12 +1071,45 @@ public sealed class DiscoverController : ControllerBase
                     type = "movie"
                 }).ToArray() ?? Array.Empty<object>();
 
+                if (items.Length == 0)
+                {
+                    var fallback = await _contentApiService.GetTrendingMoviesAsync(1);
+                    items = fallback
+                        .Where(c => !string.Equals(c.ExternalId, id, StringComparison.OrdinalIgnoreCase))
+                        .Take(12)
+                        .Select(c => new
+                        {
+                            externalId = c.ExternalId,
+                            title = c.Title,
+                            overview = c.Synopsis ?? "",
+                            posterPath = c.PosterUrl,
+                            backdropPath = c.BackdropUrl,
+                            releaseDate = c.Year?.ToString() ?? "",
+                            voteAverage = c.Rating.HasValue ? (double)c.Rating.Value : 0,
+                            voteCount = 0,
+                            source = "tmdb",
+                            type = "movie"
+                        })
+                        .Cast<object>()
+                        .ToArray();
+                }
+
                 return Ok(new { items });
             }
 
             if (type.Equals("tv", StringComparison.OrdinalIgnoreCase))
             {
-                var recs = await _contentApiService.GetTvRecommendationsAsync(id);
+                var tmdbId = id;
+                if (id.StartsWith("tt", StringComparison.OrdinalIgnoreCase))
+                {
+                    var mapped = await _contentApiService.FindByImdbIdAsync(id);
+                    if (mapped?.mediaType == "tv") tmdbId = mapped.Value.tmdbId;
+                }
+
+                var recs = tmdbId != id || !id.StartsWith("tt", StringComparison.OrdinalIgnoreCase)
+                    ? await _contentApiService.GetTvRecommendationsAsync(tmdbId)
+                    : null;
+
                 var items = recs?.Results?.Take(12).Select(r => new
                 {
                     externalId = r.Id.ToString(),
@@ -1061,6 +1123,29 @@ public sealed class DiscoverController : ControllerBase
                     source = "tmdb",
                     type = "tv"
                 }).ToArray() ?? Array.Empty<object>();
+
+                if (items.Length == 0)
+                {
+                    var fallback = await _contentApiService.GetTrendingTvShowsAsync(1);
+                    items = fallback
+                        .Where(c => !string.Equals(c.ExternalId, id, StringComparison.OrdinalIgnoreCase))
+                        .Take(12)
+                        .Select(c => new
+                        {
+                            externalId = c.ExternalId,
+                            title = c.Title,
+                            overview = c.Synopsis ?? "",
+                            posterPath = c.PosterUrl,
+                            backdropPath = c.BackdropUrl,
+                            releaseDate = c.Year?.ToString() ?? "",
+                            voteAverage = c.Rating.HasValue ? (double)c.Rating.Value : 0,
+                            voteCount = 0,
+                            source = "tmdb",
+                            type = "tv"
+                        })
+                        .Cast<object>()
+                        .ToArray();
+                }
 
                 return Ok(new { items });
             }

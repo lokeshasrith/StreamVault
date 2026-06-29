@@ -82,6 +82,8 @@ public sealed class OmdbClient
                 Plot = json.TryGetProperty("Plot", out var plot) ? (plot.GetString() ?? "") : "",
                 Poster = json.TryGetProperty("Poster", out var poster) ? (poster.GetString() ?? "") : "",
                 Director = json.TryGetProperty("Director", out var director) ? (director.GetString() ?? "") : "",
+                Writer = json.TryGetProperty("Writer", out var writer) ? (writer.GetString() ?? "") : "",
+                Actors = json.TryGetProperty("Actors", out var actors) ? (actors.GetString() ?? "") : "",
                 Type = json.TryGetProperty("Type", out var type) ? (type.GetString() ?? "") : "",
             };
 
@@ -247,6 +249,8 @@ public class OmdbTitleDetails
     public string Plot { get; set; } = "";
     public string Poster { get; set; } = "";
     public string Director { get; set; } = "";
+    public string Writer { get; set; } = "";
+    public string Actors { get; set; } = "";
     public string Type { get; set; } = "";
     public double? ImdbRating { get; set; }
 }

@@ -701,8 +701,13 @@ export default function ContentDetailsPage() {
               {content.cast.map((actor) => (
                 <button
                   key={actor.id}
-                  className="flex-shrink-0 w-20 sm:w-24 md:w-28 text-center group cursor-pointer"
-                  onClick={() => { setSelectedPersonId(actor.id); setSelectedPersonSource(actor.idSource); }}
+                  className={`flex-shrink-0 w-20 sm:w-24 md:w-28 text-center group ${actor.id > 0 ? 'cursor-pointer' : 'cursor-default'}`}
+                  onClick={() => {
+                    if (actor.id > 0) {
+                      setSelectedPersonId(actor.id);
+                      setSelectedPersonSource(actor.idSource);
+                    }
+                  }}
                 >
                   <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-[#1C1E24] mb-2 sm:mb-3 flex items-center justify-center overflow-hidden ring-2 ring-transparent group-hover:ring-[#2A2D35] transition-all">
                     {actor.profilePath ? (
