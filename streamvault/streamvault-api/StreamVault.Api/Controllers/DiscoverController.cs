@@ -657,6 +657,52 @@ public sealed class DiscoverController : ControllerBase
                         ? "tv"
                         : "movie";
 
+                    // If direct IMDb->TMDB id mapping fails, try TMDB title/year search to recover full details + full cast.
+                    var rawYear = omdbTitle.Year?
+                        .Replace("–", "-")
+                        .Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .FirstOrDefault();
+                    var parsedYear = int.TryParse(rawYear, out var y) ? y : (int?)null;
+
+                    if (!string.IsNullOrWhiteSpace(omdbTitle.Title))
+                    {
+                        try
+                        {
+                            if (omdbType == "movie")
+                            {
+                                var movieCandidates = await _contentApiService.SearchMoviesAsync(omdbTitle.Title, 1);
+                                var bestMovie = movieCandidates
+                                    .Where(c => c.ExternalId.All(char.IsDigit))
+                                    .OrderByDescending(c => string.Equals(c.Title, omdbTitle.Title, StringComparison.OrdinalIgnoreCase) ? 3 :
+                                                            (c.Title?.Contains(omdbTitle.Title, StringComparison.OrdinalIgnoreCase) == true ? 2 : 0))
+                                    .ThenByDescending(c => parsedYear.HasValue && c.Year == parsedYear.Value ? 1 : 0)
+                                    .ThenByDescending(c => c.Rating ?? 0)
+                                    .FirstOrDefault();
+
+                                if (bestMovie != null)
+                                    return await GetDetails("MOVIE", bestMovie.ExternalId);
+                            }
+                            else
+                            {
+                                var tvCandidates = await _contentApiService.SearchTvShowsAsync(omdbTitle.Title, 1);
+                                var bestTv = tvCandidates
+                                    .Where(c => c.ExternalId.All(char.IsDigit))
+                                    .OrderByDescending(c => string.Equals(c.Title, omdbTitle.Title, StringComparison.OrdinalIgnoreCase) ? 3 :
+                                                            (c.Title?.Contains(omdbTitle.Title, StringComparison.OrdinalIgnoreCase) == true ? 2 : 0))
+                                    .ThenByDescending(c => parsedYear.HasValue && c.Year == parsedYear.Value ? 1 : 0)
+                                    .ThenByDescending(c => c.Rating ?? 0)
+                                    .FirstOrDefault();
+
+                                if (bestTv != null)
+                                    return await GetDetails("TV", bestTv.ExternalId);
+                            }
+                        }
+                        catch
+                        {
+                            // Continue to OMDb fallback payload below.
+                        }
+                    }
+
                     var releaseDate = !string.IsNullOrWhiteSpace(omdbTitle.Released) &&
                                       !string.Equals(omdbTitle.Released, "N/A", StringComparison.OrdinalIgnoreCase)
                         ? omdbTitle.Released
