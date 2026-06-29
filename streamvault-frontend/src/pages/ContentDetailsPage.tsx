@@ -738,10 +738,22 @@ export default function ContentDetailsPage() {
                 <button
                   key={actor.id}
                   className={`flex-shrink-0 w-20 sm:w-24 md:w-28 text-center group ${actor.id > 0 ? 'cursor-pointer' : 'cursor-default'}`}
-                  onClick={() => {
+                  onClick={async () => {
                     if (actor.id > 0) {
                       setSelectedPersonId(actor.id);
                       setSelectedPersonSource(actor.idSource);
+                      return;
+                    }
+
+                    // Fallback for OMDb-derived cast entries that don't have TMDB/Jikan person IDs.
+                    try {
+                      const matches = await discoverApi.searchPeople(actor.name, 1, 1, false);
+                      if (matches.length > 0) {
+                        setSelectedPersonId(matches[0].id);
+                        setSelectedPersonSource(undefined);
+                      }
+                    } catch (error) {
+                      console.warn('Failed to resolve cast person profile:', error);
                     }
                   }}
                 >
