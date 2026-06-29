@@ -22,7 +22,7 @@ import {
   Tv,
   ExternalLink
 } from 'lucide-react';
-import { discoverApi, type ContentDetails, type ExternalRatings, type WatchProviders, type SimilarItem, getImageUrl } from '../api/discoverApi';
+import { discoverApi, type ContentDetails, type ExternalRatings, type WatchProviders, type SimilarItem, type ContentType, getImageUrl } from '../api/discoverApi';
 import { useAuth } from '../auth/AuthContext';
 import { upsertLibrary, type UpsertPayload } from '../api/libraryApi';
 import EpisodeList from '../components/EpisodeList';
@@ -97,8 +97,10 @@ export default function ContentDetailsPage() {
   const [selectedPersonSource, setSelectedPersonSource] = useState<string | undefined>(undefined);
   const [watchProviders, setWatchProviders] = useState<WatchProviders | null>(null);
   const [similarContent, setSimilarContent] = useState<SimilarItem[]>([]);
+  const [currentTrending, setCurrentTrending] = useState<SimilarItem[]>([]);
   const castScrollRef = useRef<HTMLDivElement>(null);
   const similarScrollRef = useRef<HTMLDivElement>(null);
+  const trendingScrollRef = useRef<HTMLDivElement>(null);
   const fromPath = (location.state as { from?: string } | null)?.from;
 
   const handleBack = () => {
@@ -172,14 +174,44 @@ export default function ContentDetailsPage() {
 
     const fetchExtras = async () => {
       try {
-        const [providers, similar] = await Promise.all([
+        const normalizedType: ContentType =
+          type === 'movie' || type === 'tv' || type === 'anime' ? type : 'all';
+
+        const [providers, similar, trending] = await Promise.all([
           type !== 'anime'
             ? discoverApi.getWatchProviders(type, id)
             : Promise.resolve(null),
-          discoverApi.getSimilar(type, id)
+          discoverApi.getSimilar(type, id),
+          discoverApi.getTrending(normalizedType, 1),
         ]);
+
+        const trendingItems: SimilarItem[] = trending
+          .filter((item) => item.externalId !== id)
+          .map((item) => ({
+            externalId: item.externalId,
+            title: item.title,
+            overview: item.overview,
+            posterPath: item.posterPath,
+            backdropPath: item.backdropPath,
+            releaseDate: item.releaseDate,
+            voteAverage: item.voteAverage,
+            voteCount: item.voteCount,
+            source: item.source,
+            type: item.type,
+          }));
+
+        const similarOrFallback = similar.length > 0
+          ? similar
+          : trendingItems.slice(0, 12);
+
+        const similarIds = new Set(similarOrFallback.map((item) => item.externalId));
+        const trendingRail = trendingItems
+          .filter((item) => !similarIds.has(item.externalId))
+          .slice(0, 12);
+
         setWatchProviders(providers);
-        setSimilarContent(similar);
+        setSimilarContent(similarOrFallback);
+        setCurrentTrending(trendingRail);
       } catch (err) {
         console.warn('Failed to fetch extras:', err);
       }
@@ -879,6 +911,65 @@ export default function ContentDetailsPage() {
                 {similarContent.map((item) => (
                   <button
                     key={item.externalId}
+                    className="flex-shrink-0 w-32 sm:w-40 md:w-44 group cursor-pointer text-left"
+                    onClick={() => navigate(`/content/${item.type}/${item.externalId}`, { state: { from: `${location.pathname}${location.search}` } })}
+                  >
+                    <div className="aspect-[2/3] rounded-lg overflow-hidden bg-[#1C1E24] mb-2 ring-2 ring-transparent group-hover:ring-[#2A2D35] transition-all">
+                      {item.posterPath ? (
+                        <img
+                          src={getImageUrl(item.posterPath, 'medium')}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Star className="w-8 h-8 text-[#808080]/30" />
+                        </div>
+                      )}
+                    </div>
+                    <h4 className="font-semibold text-white text-xs sm:text-sm truncate group-hover:text-violet-300 transition-colors">
+                      {item.title}
+                    </h4>
+                    {item.voteAverage > 0 && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Star className="w-3 h-3 text-amber-400 fill-current" />
+                        <span className="text-[10px] sm:text-xs text-[#808080]">{item.voteAverage.toFixed(1)}</span>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.section>
+        )}
+
+        {/* Current Trending Section */}
+        {currentTrending.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.85 }}
+          >
+            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8">
+              Current Trending
+            </h2>
+            <div className="relative group/trending">
+              <button
+                onClick={() => trendingScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })}
+                className="absolute left-0 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/70 text-white opacity-0 transition-opacity hover:bg-white/20 cursor-pointer group-hover/trending:opacity-100 backdrop-blur-sm sm:-ml-3 sm:flex sm:h-10 sm:w-10"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => trendingScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })}
+                className="absolute right-0 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/70 text-white opacity-0 transition-opacity hover:bg-white/20 cursor-pointer group-hover/trending:opacity-100 backdrop-blur-sm sm:-mr-3 sm:flex sm:h-10 sm:w-10"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              <div ref={trendingScrollRef} className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                {currentTrending.map((item) => (
+                  <button
+                    key={`trending-${item.externalId}`}
                     className="flex-shrink-0 w-32 sm:w-40 md:w-44 group cursor-pointer text-left"
                     onClick={() => navigate(`/content/${item.type}/${item.externalId}`, { state: { from: `${location.pathname}${location.search}` } })}
                   >
