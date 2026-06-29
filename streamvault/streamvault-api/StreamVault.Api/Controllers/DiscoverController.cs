@@ -615,6 +615,40 @@ public sealed class DiscoverController : ControllerBase
                     var resolvedSource = match.Value.mediaType == "tv" ? "TV" : "MOVIE";
                     return await GetDetails(resolvedSource, match.Value.tmdbId);
                 }
+
+                // If TMDB has no IMDb mapping, serve IMDb details directly instead of 404.
+                var imdbTitle = await _imdbApi.GetTitleDetailsAsync(id, HttpContext.RequestAborted);
+                if (imdbTitle != null)
+                {
+                    var imdbType = src is "TMDB_TV" or "TV" or "IMDB_TV" ? "tv" : "movie";
+                    var releaseDate = !string.IsNullOrWhiteSpace(imdbTitle.ReleaseDate)
+                        ? imdbTitle.ReleaseDate
+                        : imdbTitle.Year?.ToString() ?? "";
+
+                    return Ok(new
+                    {
+                        externalId = imdbTitle.ImdbId,
+                        title = imdbTitle.Title ?? "",
+                        overview = imdbTitle.Plot ?? "",
+                        posterPath = string.IsNullOrWhiteSpace(imdbTitle.Poster) ? null : imdbTitle.Poster,
+                        backdropPath = string.IsNullOrWhiteSpace(imdbTitle.Poster) ? null : imdbTitle.Poster,
+                        releaseDate,
+                        voteAverage = imdbTitle.Rating.HasValue ? (double)imdbTitle.Rating.Value : 0,
+                        voteCount = 0,
+                        genres = imdbTitle.Genres?.ToArray() ?? Array.Empty<string>(),
+                        source = "imdb",
+                        type = imdbType,
+                        imdbId = imdbTitle.ImdbId,
+                        runtime = (int?)null,
+                        status = (string?)null,
+                        tagline = (string?)null,
+                        originalLanguage = (string?)null,
+                        trailerUrl = (string?)null,
+                        director = imdbTitle.Directors?.FirstOrDefault(),
+                        writers = Array.Empty<string>(),
+                        cast = Array.Empty<object>()
+                    });
+                }
             }
 
             // IMDB source: resolve IMDb ID to TMDB, then redirect to the appropriate handler
