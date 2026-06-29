@@ -674,20 +674,40 @@ public sealed class DiscoverController : ControllerBase
                         ? Array.Empty<string>()
                         : omdbTitle.Writer.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-                    var cast = string.IsNullOrWhiteSpace(omdbTitle.Actors) || string.Equals(omdbTitle.Actors, "N/A", StringComparison.OrdinalIgnoreCase)
-                        ? Array.Empty<object>()
-                        : omdbTitle.Actors
+                    object[] cast = Array.Empty<object>();
+                    if (!string.IsNullOrWhiteSpace(omdbTitle.Actors) &&
+                        !string.Equals(omdbTitle.Actors, "N/A", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var actorNames = omdbTitle.Actors
                             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                             .Take(12)
-                            .Select(name => (object)new
+                            .ToArray();
+
+                        var castTasks = actorNames.Select(async name =>
+                        {
+                            var personMatches = await _contentApiService.SearchPeopleAsync(name, 1);
+                            var best = personMatches
+                                .OrderByDescending(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase) ? 2 :
+                                                        (p.Name?.Contains(name, StringComparison.OrdinalIgnoreCase) == true ? 1 : 0))
+                                .ThenByDescending(p => p.Popularity)
+                                .FirstOrDefault();
+
+                            var profilePath = !string.IsNullOrWhiteSpace(best?.ProfilePath)
+                                ? $"https://image.tmdb.org/t/p/w185{best.ProfilePath}"
+                                : null;
+
+                            return (object)new
                             {
-                                id = 0,
+                                id = best?.Id ?? 0,
                                 name,
                                 character = "Cast",
-                                profilePath = (string?)null,
-                                idSource = (string?)null
-                            })
-                            .ToArray();
+                                profilePath,
+                                idSource = best != null ? "tmdb" : null
+                            };
+                        });
+
+                        cast = await Task.WhenAll(castTasks);
+                    }
 
                     return Ok(new
                     {
