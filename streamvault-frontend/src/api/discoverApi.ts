@@ -608,7 +608,20 @@ class DiscoverAPI {
 
   // Get content details
   async getContentDetails(type: string, id: string): Promise<ContentDetails> {
-    return get<ContentDetails>(`/api/discover/details/${type}/${id}`);
+    try {
+      return await get<ContentDetails>(`/api/discover/details/${type}/${id}`);
+    } catch (error) {
+      const isImdbId = /^tt\d+$/i.test(id);
+      const isMovieOrTv = type === 'movie' || type === 'tv';
+      const message = error instanceof Error ? error.message : '';
+
+      // Compatibility fallback for deployments where /details/movie|tv/tt... does not resolve yet.
+      if (isImdbId && isMovieOrTv && message.includes('(404)')) {
+        return get<ContentDetails>(`/api/discover/details/imdb/${id}`);
+      }
+
+      throw error;
+    }
   }
 
   // Get real-time ratings from IMDb and Rotten Tomatoes
