@@ -177,13 +177,17 @@ export default function ContentDetailsPage() {
         const normalizedType: ContentType =
           type === 'movie' || type === 'tv' || type === 'anime' ? type : 'all';
 
-        const [providers, similar, trending] = await Promise.all([
+        const [providersResult, similarResult, trendingResult] = await Promise.allSettled([
           type !== 'anime'
             ? discoverApi.getWatchProviders(type, id)
             : Promise.resolve(null),
           discoverApi.getSimilar(type, id),
           discoverApi.getTrending(normalizedType, 1),
         ]);
+
+        const providers = providersResult.status === 'fulfilled' ? providersResult.value : null;
+        const similar = similarResult.status === 'fulfilled' ? similarResult.value : [];
+        const trending = trendingResult.status === 'fulfilled' ? trendingResult.value : [];
 
         const trendingItems: SimilarItem[] = trending
           .filter((item) => item.externalId !== id)
