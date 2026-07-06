@@ -16,6 +16,11 @@ public sealed class ImageProxyController : ControllerBase
     private static readonly HashSet<string> AllowedHosts = new(StringComparer.OrdinalIgnoreCase)
     {
         "image.tmdb.org",
+        "media-amazon.com",
+        "m.media-amazon.com",
+        "imdb.com",
+        "media-imdb.com",
+        "ia.media-imdb.com",
         "myanimelist.net",
         "cdn.myanimelist.net",
         "cdn.jikan.moe",
