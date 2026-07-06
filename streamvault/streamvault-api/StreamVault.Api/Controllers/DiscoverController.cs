@@ -147,6 +147,66 @@ public sealed class DiscoverController : ControllerBase
             .ToList();
     }
 
+    private async Task<object[]> BuildCastFromNamesAsync(IEnumerable<string> actorNames)
+    {
+        var names = actorNames
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Select(n => n.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(12)
+            .ToArray();
+
+        if (names.Length == 0)
+            return Array.Empty<object>();
+
+        var castTasks = names.Select(async name =>
+        {
+            try
+            {
+                var personMatches = await _contentApiService.SearchPeopleAsync(name, 1);
+                var best = personMatches
+                    .OrderByDescending(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase) ? 3 :
+                                            (p.Name?.Contains(name, StringComparison.OrdinalIgnoreCase) == true ? 2 : 0))
+                    .ThenByDescending(p => !string.IsNullOrWhiteSpace(p.ProfilePath))
+                    .ThenByDescending(p => p.Popularity)
+                    .FirstOrDefault();
+
+                var profilePath = best?.ProfilePath;
+                if (best != null && string.IsNullOrWhiteSpace(profilePath))
+                {
+                    var personDetails = await _contentApiService.GetPersonDetailsAsync(best.Id.ToString());
+                    profilePath = personDetails?.ProfilePath;
+                }
+
+                var profileUrl = !string.IsNullOrWhiteSpace(profilePath)
+                    ? $"https://image.tmdb.org/t/p/w185{profilePath}"
+                    : null;
+
+                return (object)new
+                {
+                    id = best?.Id ?? 0,
+                    name,
+                    character = "Cast",
+                    profilePath = profileUrl,
+                    idSource = best != null ? "tmdb" : null
+                };
+            }
+            catch
+            {
+                return (object)new
+                {
+                    id = 0,
+                    name,
+                    character = "Cast",
+                    profilePath = (string?)null,
+                    idSource = (string?)null
+                };
+            }
+        });
+
+        return await Task.WhenAll(castTasks);
+    }
+
     // Maps Content model to the shape the frontend ContentItem interface expects
     private static object MapToFrontend(Content c) => new
     {
@@ -625,6 +685,8 @@ public sealed class DiscoverController : ControllerBase
                         ? imdbTitle.ReleaseDate
                         : imdbTitle.Year?.ToString() ?? "";
 
+                    var imdbCast = await BuildCastFromNamesAsync(imdbTitle.Actors ?? Enumerable.Empty<string>());
+
                     return Ok(new
                     {
                         externalId = imdbTitle.ImdbId,
@@ -646,7 +708,7 @@ public sealed class DiscoverController : ControllerBase
                         trailerUrl = (string?)null,
                         director = imdbTitle.Directors?.FirstOrDefault(),
                         writers = Array.Empty<string>(),
-                        cast = Array.Empty<object>()
+                        cast = imdbCast
                     });
                 }
 
@@ -720,40 +782,11 @@ public sealed class DiscoverController : ControllerBase
                         ? Array.Empty<string>()
                         : omdbTitle.Writer.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-                    object[] cast = Array.Empty<object>();
-                    if (!string.IsNullOrWhiteSpace(omdbTitle.Actors) &&
-                        !string.Equals(omdbTitle.Actors, "N/A", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var actorNames = omdbTitle.Actors
-                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                            .Take(12)
-                            .ToArray();
-
-                        var castTasks = actorNames.Select(async name =>
-                        {
-                            var personMatches = await _contentApiService.SearchPeopleAsync(name, 1);
-                            var best = personMatches
-                                .OrderByDescending(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase) ? 2 :
-                                                        (p.Name?.Contains(name, StringComparison.OrdinalIgnoreCase) == true ? 1 : 0))
-                                .ThenByDescending(p => p.Popularity)
-                                .FirstOrDefault();
-
-                            var profilePath = !string.IsNullOrWhiteSpace(best?.ProfilePath)
-                                ? $"https://image.tmdb.org/t/p/w185{best.ProfilePath}"
-                                : null;
-
-                            return (object)new
-                            {
-                                id = best?.Id ?? 0,
-                                name,
-                                character = "Cast",
-                                profilePath,
-                                idSource = best != null ? "tmdb" : null
-                            };
-                        });
-
-                        cast = await Task.WhenAll(castTasks);
-                    }
+                    var omdbActorNames = (!string.IsNullOrWhiteSpace(omdbTitle.Actors) &&
+                                          !string.Equals(omdbTitle.Actors, "N/A", StringComparison.OrdinalIgnoreCase))
+                        ? omdbTitle.Actors.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        : Array.Empty<string>();
+                    var cast = await BuildCastFromNamesAsync(omdbActorNames);
 
                     return Ok(new
                     {

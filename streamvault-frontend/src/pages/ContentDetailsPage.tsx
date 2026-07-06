@@ -84,6 +84,13 @@ function getReleaseYear(value?: string): number | null {
   return Number.isFinite(year) ? year : null;
 }
 
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
+}
+
 export default function ContentDetailsPage() {
   const { type, id } = useParams<{ type: string; id: string }>();
   const location = useLocation();
@@ -783,7 +790,9 @@ export default function ContentDetailsPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Users className="w-10 h-10 text-[#808080]/30" />
+                      <span className="text-base sm:text-lg font-semibold tracking-wide text-[#808080]">
+                        {getInitials(actor.name)}
+                      </span>
                     )}
                   </div>
                   <h4 className="font-semibold text-white text-xs sm:text-sm mb-0.5 group-hover:text-violet-300 transition-colors truncate">
