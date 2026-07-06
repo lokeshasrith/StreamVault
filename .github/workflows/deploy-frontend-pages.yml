@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -53,5 +53,19 @@ jobs:
         with:
           path: streamvault-frontend/dist
 
-      - name: Deploy
+      - name: Deploy (attempt 1)
+        id: deploy_primary
+        continue-on-error: true
         uses: actions/deploy-pages@v4
+
+      - name: Deploy (retry attempt)
+        id: deploy_retry
+        if: steps.deploy_primary.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+
+      - name: Fail if deploy did not succeed
+        if: steps.deploy_primary.outcome == 'failure' && steps.deploy_retry.outcome == 'failure'
+        run: |
+          echo "GitHub Pages deployment failed on both attempts."
+          exit 1
