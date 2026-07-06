@@ -1717,12 +1717,17 @@ public sealed class DiscoverController : ControllerBase
         }
     }
 
-    [Authorize]
     [HttpGet("recommendations/liked")]
     public async Task<IActionResult> GetRecommendationsFromLiked([FromQuery] int limit = 30)
     {
         if (!TryGetCurrentUserId(out var currentUserId))
-            return Unauthorized(new { error = "Invalid user identity" });
+        {
+            return Ok(new
+            {
+                items = Array.Empty<object>(),
+                reason = "unauthenticated"
+            });
+        }
 
         if (limit < 1) limit = 30;
         if (limit > 60) limit = 60;

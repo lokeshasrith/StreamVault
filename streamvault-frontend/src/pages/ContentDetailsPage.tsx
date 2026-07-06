@@ -78,6 +78,12 @@ function formatLanguageLabel(languageCode?: string): string {
   }
 }
 
+function getReleaseYear(value?: string): number | null {
+  if (!value) return null;
+  const year = new Date(value).getFullYear();
+  return Number.isFinite(year) ? year : null;
+}
+
 export default function ContentDetailsPage() {
   const { type, id } = useParams<{ type: string; id: string }>();
   const location = useLocation();
@@ -177,19 +183,31 @@ export default function ContentDetailsPage() {
         const normalizedType: ContentType =
           type === 'movie' || type === 'tv' || type === 'anime' ? type : 'all';
 
+        const trendingPromise = normalizedType === 'movie' || normalizedType === 'tv'
+          ? discoverApi.getTrendingIndia(normalizedType, 1)
+          : discoverApi.getTrending(normalizedType, 1);
+
         const [providersResult, similarResult, trendingResult] = await Promise.allSettled([
           type !== 'anime'
             ? discoverApi.getWatchProviders(type, id)
             : Promise.resolve(null),
           discoverApi.getSimilar(type, id),
-          discoverApi.getTrending(normalizedType, 1),
+          trendingPromise,
         ]);
 
         const providers = providersResult.status === 'fulfilled' ? providersResult.value : null;
         const similar = similarResult.status === 'fulfilled' ? similarResult.value : [];
         const trending = trendingResult.status === 'fulfilled' ? trendingResult.value : [];
 
-        const trendingItems: SimilarItem[] = trending
+        const currentYear = new Date().getFullYear();
+        const recentTrending = trending.filter((item) => {
+          const releaseYear = getReleaseYear(item.releaseDate);
+          return releaseYear !== null && releaseYear >= currentYear - 5;
+        });
+
+        const baseTrending = recentTrending.length >= 8 ? recentTrending : trending;
+
+        const trendingItems: SimilarItem[] = baseTrending
           .filter((item) => item.externalId !== id)
           .map((item) => ({
             externalId: item.externalId,
@@ -734,9 +752,9 @@ export default function ContentDetailsPage() {
                 <ChevronRight className="w-5 h-5" />
               </button>
               <div ref={castScrollRef} className="flex gap-3 sm:gap-5 overflow-x-auto pb-4 scrollbar-hide">
-              {content.cast.map((actor) => (
+              {content.cast.map((actor, index) => (
                 <button
-                  key={actor.id}
+                  key={`${actor.id}-${actor.name}-${index}`}
                   className={`flex-shrink-0 w-20 sm:w-24 md:w-28 text-center group ${actor.id > 0 ? 'cursor-pointer' : 'cursor-default'}`}
                   onClick={async () => {
                     if (actor.id > 0) {
