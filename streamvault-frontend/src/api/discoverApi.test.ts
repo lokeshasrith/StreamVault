@@ -83,11 +83,11 @@ describe('discoverApi utility helpers', () => {
     expect(PLACEHOLDER_POSTER.startsWith('data:image/svg+xml')).toBe(true);
   });
 
-  it('uses direct image URLs for trusted hosts and proxy for others', () => {
-    const direct = getImageUrl('https://image.tmdb.org/t/p/w500/abc.jpg');
+  it('proxies remote image URLs through backend image proxy', () => {
+    const proxiedTmdb = getImageUrl('https://image.tmdb.org/t/p/w500/abc.jpg');
     const proxied = getImageUrl('https://example.org/poster.jpg');
 
-    expect(direct).toBe('https://image.tmdb.org/t/p/w500/abc.jpg');
+    expect(proxiedTmdb).toContain('/api/img/proxy?url=');
     expect(proxied).toContain('/api/img/proxy?url=');
   });
 

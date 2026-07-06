@@ -241,37 +241,8 @@ export interface SimilarItem {
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
-const DIRECT_IMAGE_HOSTS = new Set([
-  'variety.com',
-  'deadline.com',
-  'hollywoodreporter.com',
-  'www.hollywoodreporter.com',
-  'cdn.myanimelist.net',
-  'animenewsnetwork.com',
-  'www.animenewsnetwork.com',
-  'hindustantimes.com',
-  'www.hindustantimes.com',
-  'bollywoodhungama.com',
-  'www.bollywoodhungama.com',
-  'indianexpress.com',
-  'www.indianexpress.com',
-  'image.tmdb.org',
-  'm.media-amazon.com',
-  'ia.media-imdb.com',
-]);
-
 function buildProxyImageUrl(url: string): string {
   return `${API_BASE}/api/img/proxy?url=${encodeURIComponent(url)}`;
-}
-
-function shouldLoadDirectly(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    if (DIRECT_IMAGE_HOSTS.has(parsed.host)) return true;
-    return Array.from(DIRECT_IMAGE_HOSTS).some((host) => parsed.host === host || parsed.host.endsWith(`.${host}`));
-  } catch {
-    return false;
-  }
 }
 
 export const PLACEHOLDER_POSTER = `data:image/svg+xml,${encodeURIComponent(
@@ -289,9 +260,6 @@ export function getImageUrl(path: string | undefined, size: 'small' | 'medium' |
 
   // Route remote images through the backend so embedded browsers do not block them.
   if (path.startsWith('http')) {
-    if (shouldLoadDirectly(path)) {
-      return path;
-    }
     return buildProxyImageUrl(path);
   }
 

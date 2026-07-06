@@ -685,6 +685,45 @@ public sealed class DiscoverController : ControllerBase
                         ? imdbTitle.ReleaseDate
                         : imdbTitle.Year?.ToString() ?? "";
 
+                    if (!string.IsNullOrWhiteSpace(imdbTitle.Title))
+                    {
+                        try
+                        {
+                            if (imdbType == "movie")
+                            {
+                                var movieCandidates = await _contentApiService.SearchMoviesAsync(imdbTitle.Title, 1);
+                                var bestMovie = movieCandidates
+                                    .Where(c => c.ExternalId.All(char.IsDigit))
+                                    .OrderByDescending(c => string.Equals(c.Title, imdbTitle.Title, StringComparison.OrdinalIgnoreCase) ? 3 :
+                                                            (c.Title?.Contains(imdbTitle.Title, StringComparison.OrdinalIgnoreCase) == true ? 2 : 0))
+                                    .ThenByDescending(c => imdbTitle.Year.HasValue && c.Year == imdbTitle.Year.Value ? 1 : 0)
+                                    .ThenByDescending(c => c.Rating ?? 0)
+                                    .FirstOrDefault();
+
+                                if (bestMovie != null)
+                                    return await GetDetails("MOVIE", bestMovie.ExternalId);
+                            }
+                            else
+                            {
+                                var tvCandidates = await _contentApiService.SearchTvShowsAsync(imdbTitle.Title, 1);
+                                var bestTv = tvCandidates
+                                    .Where(c => c.ExternalId.All(char.IsDigit))
+                                    .OrderByDescending(c => string.Equals(c.Title, imdbTitle.Title, StringComparison.OrdinalIgnoreCase) ? 3 :
+                                                            (c.Title?.Contains(imdbTitle.Title, StringComparison.OrdinalIgnoreCase) == true ? 2 : 0))
+                                    .ThenByDescending(c => imdbTitle.Year.HasValue && c.Year == imdbTitle.Year.Value ? 1 : 0)
+                                    .ThenByDescending(c => c.Rating ?? 0)
+                                    .FirstOrDefault();
+
+                                if (bestTv != null)
+                                    return await GetDetails("TV", bestTv.ExternalId);
+                            }
+                        }
+                        catch
+                        {
+                            // Continue to IMDb fallback payload below.
+                        }
+                    }
+
                     var imdbCast = await BuildCastFromNamesAsync(imdbTitle.Actors ?? Enumerable.Empty<string>());
 
                     return Ok(new
