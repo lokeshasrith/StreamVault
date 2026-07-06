@@ -21,6 +21,8 @@ public sealed class ImageProxyController : ControllerBase
         "imdb.com",
         "media-imdb.com",
         "ia.media-imdb.com",
+        "wikimedia.org",
+        "upload.wikimedia.org",
         "myanimelist.net",
         "cdn.myanimelist.net",
         "cdn.jikan.moe",

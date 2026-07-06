@@ -32,6 +32,7 @@ public sealed class DiscoverController : ControllerBase
     private readonly NewsApiClient _newsApi;
     private readonly ImdbApiClient _imdbApi;
     private readonly IMemoryCache _cache;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ApplicationDbContext _db;
     private readonly ILogger<DiscoverController> _logger;
 
@@ -63,6 +64,7 @@ public sealed class DiscoverController : ControllerBase
         WebSearchClient webSearch,
         NewsApiClient newsApi,
         ImdbApiClient imdbApi,
+        IHttpClientFactory httpClientFactory,
         IMemoryCache cache,
         ApplicationDbContext db,
         ILogger<DiscoverController> logger)
@@ -74,6 +76,7 @@ public sealed class DiscoverController : ControllerBase
         _webSearch = webSearch;
         _newsApi = newsApi;
         _imdbApi = imdbApi;
+        _httpClientFactory = httpClientFactory;
         _cache = cache;
         _db = db;
         _logger = logger;
@@ -182,6 +185,11 @@ public sealed class DiscoverController : ControllerBase
                     ? $"https://image.tmdb.org/t/p/w185{profilePath}"
                     : null;
 
+                if (string.IsNullOrWhiteSpace(profileUrl))
+                {
+                    profileUrl = await TryGetWikipediaImageAsync(name, HttpContext.RequestAborted);
+                }
+
                 return (object)new
                 {
                     id = best?.Id ?? 0,
@@ -205,6 +213,62 @@ public sealed class DiscoverController : ControllerBase
         });
 
         return await Task.WhenAll(castTasks);
+    }
+
+    private async Task<string?> TryGetWikipediaImageAsync(string personName, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(personName))
+            return null;
+
+        var cacheKey = $"wiki-img:{personName.ToLowerInvariant()}";
+        if (_cache.TryGetValue(cacheKey, out string? cached))
+            return cached;
+
+        try
+        {
+            var title = personName.Trim().Replace(' ', '_');
+            var url = $"https://en.wikipedia.org/api/rest_v1/page/summary/{Uri.EscapeDataString(title)}";
+            var client = _httpClientFactory.CreateClient();
+            client.Timeout = TimeSpan.FromSeconds(6);
+
+            using var response = await client.GetAsync(url, ct);
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            await using var stream = await response.Content.ReadAsStreamAsync(ct);
+            using var doc = await System.Text.Json.JsonDocument.ParseAsync(stream, cancellationToken: ct);
+            var root = doc.RootElement;
+
+            string? imageUrl = null;
+            if (root.TryGetProperty("thumbnail", out var thumbnail) &&
+                thumbnail.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                thumbnail.TryGetProperty("source", out var thumbSource) &&
+                thumbSource.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                imageUrl = thumbSource.GetString();
+            }
+
+            if (string.IsNullOrWhiteSpace(imageUrl) &&
+                root.TryGetProperty("originalimage", out var original) &&
+                original.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                original.TryGetProperty("source", out var originalSource) &&
+                originalSource.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                imageUrl = originalSource.GetString();
+            }
+
+            if (!string.IsNullOrWhiteSpace(imageUrl))
+            {
+                _cache.Set(cacheKey, imageUrl, TimeSpan.FromHours(12));
+                return imageUrl;
+            }
+        }
+        catch
+        {
+            // Non-critical enrichment.
+        }
+
+        return null;
     }
 
     // Maps Content model to the shape the frontend ContentItem interface expects
