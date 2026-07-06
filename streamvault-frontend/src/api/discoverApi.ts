@@ -245,6 +245,20 @@ function buildProxyImageUrl(url: string): string {
   return `${API_BASE}/api/img/proxy?url=${encodeURIComponent(url)}`;
 }
 
+function shouldBypassProxy(url: string): boolean {
+  try {
+    const host = new URL(url).host.toLowerCase();
+    return host === 'm.media-amazon.com'
+      || host === 'media-amazon.com'
+      || host === 'ia.media-imdb.com'
+      || host === 'media-imdb.com'
+      || host === 'imdb.com'
+      || host.endsWith('.imdb.com');
+  } catch {
+    return false;
+  }
+}
+
 export const PLACEHOLDER_POSTER = `data:image/svg+xml,${encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" width="342" height="513" viewBox="0 0 342 513">
     <rect width="342" height="513" fill="#1a1a2e"/>
@@ -260,6 +274,9 @@ export function getImageUrl(path: string | undefined, size: 'small' | 'medium' |
 
   // Route remote images through the backend so embedded browsers do not block them.
   if (path.startsWith('http')) {
+    if (shouldBypassProxy(path)) {
+      return path;
+    }
     return buildProxyImageUrl(path);
   }
 
