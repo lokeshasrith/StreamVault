@@ -108,6 +108,7 @@ export default function ContentDetailsPage() {
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(false);
   const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
   const [selectedPersonSource, setSelectedPersonSource] = useState<string | undefined>(undefined);
+  const [brokenCastImages, setBrokenCastImages] = useState<Set<string>>(new Set());
   const [watchProviders, setWatchProviders] = useState<WatchProviders | null>(null);
   const [similarContent, setSimilarContent] = useState<SimilarItem[]>([]);
   const [currentTrending, setCurrentTrending] = useState<SimilarItem[]>([]);
@@ -150,6 +151,10 @@ export default function ContentDetailsPage() {
 
   useEffect(() => {
     setIsOverviewExpanded(false);
+  }, [content?.externalId]);
+
+  useEffect(() => {
+    setBrokenCastImages(new Set());
   }, [content?.externalId]);
 
   // Fetch real-time ratings from IMDb and Rotten Tomatoes (skip for anime â€” they use MAL scores)
@@ -759,9 +764,13 @@ export default function ContentDetailsPage() {
                 <ChevronRight className="w-5 h-5" />
               </button>
               <div ref={castScrollRef} className="flex gap-3 sm:gap-5 overflow-x-auto pb-4 scrollbar-hide">
-              {content.cast.map((actor, index) => (
+              {content.cast.map((actor, index) => {
+                const castKey = `${actor.id}-${actor.name}-${index}`;
+                const canShowImage = Boolean(actor.profilePath) && !brokenCastImages.has(castKey);
+
+                return (
                 <button
-                  key={`${actor.id}-${actor.name}-${index}`}
+                  key={castKey}
                   className={`flex-shrink-0 w-20 sm:w-24 md:w-28 text-center group ${actor.id > 0 ? 'cursor-pointer' : 'cursor-default'}`}
                   onClick={async () => {
                     if (actor.id > 0) {
@@ -783,11 +792,18 @@ export default function ContentDetailsPage() {
                   }}
                 >
                   <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-[#1C1E24] mb-2 sm:mb-3 flex items-center justify-center overflow-hidden ring-2 ring-transparent group-hover:ring-[#2A2D35] transition-all">
-                    {actor.profilePath ? (
+                    {canShowImage ? (
                       <img
                         src={getImageUrl(actor.profilePath, 'small')}
                         alt={actor.name}
                         className="w-full h-full object-cover"
+                        onError={() => {
+                          setBrokenCastImages((prev) => {
+                            const next = new Set(prev);
+                            next.add(castKey);
+                            return next;
+                          });
+                        }}
                       />
                     ) : (
                       <span className="text-base sm:text-lg font-semibold tracking-wide text-[#808080]">
@@ -802,7 +818,8 @@ export default function ContentDetailsPage() {
                     {actor.character}
                   </p>
                 </button>
-              ))}
+                );
+              })}
               </div>
             </div>
             )}
