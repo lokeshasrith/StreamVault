@@ -335,6 +335,17 @@ const FALLBACK_TV_QUERIES = [
   'Sherlock',
 ];
 
+const FALLBACK_ANIME_QUERIES = [
+  'Attack on Titan',
+  'Demon Slayer',
+  'Jujutsu Kaisen',
+  'One Piece',
+  'Naruto Shippuden',
+  'Death Note',
+  'Steins Gate',
+  'Fullmetal Alchemist Brotherhood',
+];
+
 const STATIC_FALLBACK_MOVIES: ContentItem[] = [
   {
     externalId: '693134',
@@ -461,17 +472,88 @@ const STATIC_FALLBACK_TV: ContentItem[] = [
   },
 ];
 
+const STATIC_FALLBACK_ANIME: ContentItem[] = [
+  {
+    externalId: '16498',
+    title: 'Attack on Titan',
+    overview: 'Humans fight for survival behind enormous walls against terrifying titans.',
+    posterPath: undefined,
+    backdropPath: undefined,
+    releaseDate: '2013-04-07',
+    voteAverage: 9.0,
+    voteCount: 0,
+    popularity: 0,
+    genreIds: [],
+    genres: ['Action', 'Drama'],
+    source: 'jikan',
+    type: 'anime',
+  },
+  {
+    externalId: '52991',
+    title: 'Frieren: Beyond Journey\'s End',
+    overview: 'An elven mage reflects on legacy, time, and friendship after the hero\'s journey ends.',
+    posterPath: undefined,
+    backdropPath: undefined,
+    releaseDate: '2023-09-29',
+    voteAverage: 9.2,
+    voteCount: 0,
+    popularity: 0,
+    genreIds: [],
+    genres: ['Adventure', 'Drama'],
+    source: 'jikan',
+    type: 'anime',
+  },
+  {
+    externalId: '5114',
+    title: 'Fullmetal Alchemist: Brotherhood',
+    overview: 'Two brothers pay a terrible price for alchemy and set out to restore what they lost.',
+    posterPath: undefined,
+    backdropPath: undefined,
+    releaseDate: '2009-04-05',
+    voteAverage: 9.1,
+    voteCount: 0,
+    popularity: 0,
+    genreIds: [],
+    genres: ['Action', 'Fantasy'],
+    source: 'jikan',
+    type: 'anime',
+  },
+  {
+    externalId: '9253',
+    title: 'Steins;Gate',
+    overview: 'A self-proclaimed mad scientist and friends discover a method of sending messages through time.',
+    posterPath: undefined,
+    backdropPath: undefined,
+    releaseDate: '2011-04-06',
+    voteAverage: 9.0,
+    voteCount: 0,
+    popularity: 0,
+    genreIds: [],
+    genres: ['Sci-Fi', 'Thriller'],
+    source: 'jikan',
+    type: 'anime',
+  },
+];
+
 // ─── Main API class ───────────────────────────────────────────────────────────
 
 class DiscoverAPI {
-  private async getSeededFallback(type: 'movie' | 'tv', page: number = 1): Promise<ContentItem[]> {
-    const staticSeeds = type === 'movie' ? STATIC_FALLBACK_MOVIES : STATIC_FALLBACK_TV;
+  private async getSeededFallback(type: 'movie' | 'tv' | 'anime', page: number = 1): Promise<ContentItem[]> {
+    const staticSeeds = type === 'movie'
+      ? STATIC_FALLBACK_MOVIES
+      : type === 'tv'
+        ? STATIC_FALLBACK_TV
+        : STATIC_FALLBACK_ANIME;
     if (staticSeeds.length > 0) {
       const pageSize = 4;
       return staticSeeds.slice((page - 1) * pageSize, page * pageSize);
     }
 
-    const seeds = type === 'movie' ? FALLBACK_MOVIE_QUERIES : FALLBACK_TV_QUERIES;
+    const seeds = type === 'movie'
+      ? FALLBACK_MOVIE_QUERIES
+      : type === 'tv'
+        ? FALLBACK_TV_QUERIES
+        : FALLBACK_ANIME_QUERIES;
     const pageSize = 4;
     const pageSeeds = seeds.slice((page - 1) * pageSize, page * pageSize);
     if (pageSeeds.length === 0) return [];
@@ -488,21 +570,23 @@ class DiscoverAPI {
   }
 
   private async withDiscoverFallback(items: ContentItem[], type: ContentType, page: number): Promise<ContentItem[]> {
-    if (type === 'movie' || type === 'tv') {
+    if (type === 'movie' || type === 'tv' || type === 'anime') {
       return items.length > 0 ? items : this.getSeededFallback(type, page);
     }
 
     if (type === 'all') {
       const hasMovie = items.some((item) => item.type === 'movie');
       const hasTv = items.some((item) => item.type === 'tv');
-      if (hasMovie && hasTv) return items;
+      const hasAnime = items.some((item) => item.type === 'anime');
+      if (hasMovie && hasTv && hasAnime) return items;
 
-      const [movieFallback, tvFallback] = await Promise.all([
+      const [movieFallback, tvFallback, animeFallback] = await Promise.all([
         hasMovie ? Promise.resolve([]) : this.getSeededFallback('movie', page),
         hasTv ? Promise.resolve([]) : this.getSeededFallback('tv', page),
+        hasAnime ? Promise.resolve([]) : this.getSeededFallback('anime', page),
       ]);
 
-      return [...items, ...movieFallback, ...tvFallback].slice(0, 30);
+      return [...items, ...movieFallback, ...tvFallback, ...animeFallback].slice(0, 36);
     }
 
     return items;
