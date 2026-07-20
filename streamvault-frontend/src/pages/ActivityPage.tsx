@@ -80,7 +80,7 @@ export default function ActivityPage() {
   }
 
   return (
-    <div className="activity-page mx-auto max-w-7xl space-y-6 px-3 py-5 sm:space-y-8 sm:px-4 md:px-8 sm:py-6">
+    <div className="activity-page page-shell mx-auto max-w-7xl space-y-6 px-3 py-5 sm:space-y-8 sm:px-4 md:px-8 sm:py-6">
       {/* Header */}
       <div className="flex items-center gap-2.5 sm:gap-3">
         <Activity className="w-6 h-6 text-sv-gold" />

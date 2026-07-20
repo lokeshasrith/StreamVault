@@ -438,7 +438,7 @@ export default function DiscoverPage() {
   );
 
   return (
-    <div className="discover-page min-h-screen bg-[#0F1014] pt-11 sm:pt-16 md:pt-20 pb-20 md:pb-8">
+    <div className="discover-page page-shell min-h-screen bg-[#0F1014] pt-11 sm:pt-16 md:pt-20 pb-20 md:pb-8">
 
 
       {/* Hero Banner - show skeleton while loading, hidden when searching */}
@@ -458,7 +458,7 @@ export default function DiscoverPage() {
         />
       )}
 
-      <div className="mx-auto max-w-[1480px] px-3 sm:px-6 py-2 sm:py-8 space-y-5 sm:space-y-14">
+      <div className="mx-auto max-w-[1480px] px-3 sm:px-6 py-2 sm:py-8 space-y-5 sm:space-y-14 stagger-rise">
         <div className="space-y-4 sm:space-y-12">
           {/* Header & Search */}
           <div className="text-center">

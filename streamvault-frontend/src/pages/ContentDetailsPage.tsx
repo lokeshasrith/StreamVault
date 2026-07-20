@@ -352,7 +352,7 @@ export default function ContentDetailsPage() {
     : '';
 
   return (
-    <div className="details-page min-h-screen bg-[#0F1014] overflow-x-hidden">
+    <div className="details-page page-shell min-h-screen bg-[#0F1014] overflow-x-hidden">
       {/* Hero Section with Backdrop */}
       <div className="relative min-h-[31rem] sm:min-h-[42rem] md:min-h-[75vh] lg:min-h-[80vh]">
         {content.backdropPath && (

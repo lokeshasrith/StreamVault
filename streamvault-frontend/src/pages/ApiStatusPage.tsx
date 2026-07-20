@@ -152,7 +152,7 @@ export default function ApiStatusPage() {
   const errorCount = apiStatuses.filter(api => api.status === 'error').length;
 
   return (
-    <div className="status-page min-h-screen bg-[#0F1014]">
+    <div className="status-page page-shell min-h-screen bg-[#0F1014]">
       <div className="mx-auto w-full max-w-[1480px] px-3 sm:px-6 py-5 sm:py-12">
         <motion.div
           initial={{ opacity: 0, y: 30 }}

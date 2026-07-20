@@ -588,11 +588,18 @@ export default function AppShell() {
 
       {/* ── Main Content ───────────────────────────────────────────── */}
       <main className={isDiscover ? "mobile-content-shell relative z-10" : "mobile-content-shell relative z-10 mx-auto max-w-[1480px] px-3 sm:px-4 md:px-6 pb-20 md:pb-8 pt-12 sm:pt-16 md:pt-20"}>
-        {isDiscover ? (
-          <Outlet />
-        ) : (
-          <Outlet />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={`${location.pathname}${location.search}`}
+            initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -10, filter: 'blur(5px)' }}
+            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+            className="app-stage"
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* ── Mobile Bottom Nav ──────────────────────────────────────── */}

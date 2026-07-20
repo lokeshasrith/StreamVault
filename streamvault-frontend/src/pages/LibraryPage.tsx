@@ -289,8 +289,8 @@ export default function LibraryPage() {
   const Icon = statusConfig.icon;
 
   return (
-    <div className="library-page min-h-screen bg-[#0F1014]">
-      <div className="mx-auto w-full max-w-[1480px] px-3 sm:px-6 py-3 sm:py-8">
+    <div className="library-page page-shell min-h-screen bg-[#0F1014]">
+      <div className="mx-auto w-full max-w-[1480px] px-3 sm:px-6 py-3 sm:py-8 stagger-rise">
         <div className="space-y-6 sm:space-y-8">
           {/* Header Section */}
           <div>
