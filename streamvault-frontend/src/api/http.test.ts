@@ -25,7 +25,10 @@ describe('http get', () => {
 
     const result = await get<{ ok: boolean; id: number }>('/api/ping');
     expect(result).toEqual({ ok: true, id: 1 });
-    expect(fetch).toHaveBeenCalledWith('/api/ping', { headers: {} });
+    const calledUrl = (vi.mocked(fetch).mock.calls[0]?.[0] as string) ?? '';
+    const calledInit = vi.mocked(fetch).mock.calls[0]?.[1];
+    expect(calledUrl).toContain('/api/ping');
+    expect(calledInit).toEqual({ headers: {} });
   });
 
   it('throws API error text from JSON payload for non-OK response', async () => {

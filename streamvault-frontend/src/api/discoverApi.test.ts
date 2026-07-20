@@ -83,12 +83,12 @@ describe('discoverApi utility helpers', () => {
     expect(PLACEHOLDER_POSTER.startsWith('data:image/svg+xml')).toBe(true);
   });
 
-  it('uses direct URL for Amazon/IMDb images and proxies other remotes', () => {
-    const amazonDirect = getImageUrl('https://m.media-amazon.com/images/M/demo.jpg');
+  it('proxies remote images through backend image proxy', () => {
+    const proxiedAmazon = getImageUrl('https://m.media-amazon.com/images/M/demo.jpg');
     const proxiedTmdb = getImageUrl('https://image.tmdb.org/t/p/w500/abc.jpg');
     const proxied = getImageUrl('https://example.org/poster.jpg');
 
-    expect(amazonDirect).toBe('https://m.media-amazon.com/images/M/demo.jpg');
+    expect(proxiedAmazon).toContain('/api/img/proxy?url=');
     expect(proxiedTmdb).toContain('/api/img/proxy?url=');
     expect(proxied).toContain('/api/img/proxy?url=');
   });
