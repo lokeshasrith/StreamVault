@@ -6,6 +6,10 @@ services:
     dockerContext: streamvault/streamvault-api/StreamVault.Api
     plan: free
     healthCheckPath: /api/health
+    disks:
+      - name: streamvault-data
+        mountPath: /var/data
+        sizeGB: 1
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -24,4 +28,4 @@ services:
       - key: AllowedOrigins
         value: "https://lokeshasrith.github.io"
       - key: ConnectionStrings__Default
-        value: "Data Source=/tmp/streamvault.db"
+        value: "Data Source=/var/data/streamvault.db"
