@@ -1,9 +1,14 @@
 import React from "react";
 import { NavLink, Outlet, useNavigate, useSearchParams, useLocation, useParams, Navigate } from "react-router-dom";
-import { Search, LogOut, Compass, Bookmark, Eye, CheckCircle, XCircle, PauseCircle, Activity, Film, Tv, Sparkles, Star, X, Clock, Trash2, Menu, Library, Heart } from "lucide-react";
+import { Search, LogOut, Compass, Bookmark, Eye, CheckCircle, XCircle, PauseCircle, Activity, Film, Tv, Sparkles, Star, X, Clock, Trash2, Menu, Library, Heart, Download } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "../auth/AuthContext";
 import { discoverApi, type ContentItem, getImageUrl, formatRating, getContentTypeLabel, formatYear, PLACEHOLDER_POSTER } from "../api/discoverApi";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+}
 
 const NAV_ITEMS = [
   { to: "/", label: "Discover", icon: Compass, end: true },
@@ -183,6 +188,46 @@ export default function AppShell() {
 
   const [mobileSearchOpen, setMobileSearchOpen] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [installPrompt, setInstallPrompt] = React.useState<BeforeInstallPromptEvent | null>(null);
+  const [showIosInstallHint, setShowIosInstallHint] = React.useState(false);
+  const [installHintDismissed, setInstallHintDismissed] = React.useState(false);
+
+  const isIos = React.useMemo(() => /iphone|ipad|ipod/i.test(navigator.userAgent), []);
+  const isStandalone = React.useMemo(() => window.matchMedia?.("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true, []);
+
+  React.useEffect(() => {
+    const onBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+
+    const onInstalled = () => {
+      setInstallPrompt(null);
+      setShowIosInstallHint(false);
+    };
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+
+  const handleAddToHomeScreen = React.useCallback(async () => {
+    if (installPrompt) {
+      await installPrompt.prompt();
+      await installPrompt.userChoice;
+      setInstallPrompt(null);
+      setMobileMenuOpen(false);
+      return;
+    }
+
+    if (isIos && !isStandalone) {
+      setShowIosInstallHint(true);
+      return;
+    }
+  }, [installPrompt, isIos, isStandalone]);
 
   React.useEffect(() => {
     setMobileMenuOpen(false);
@@ -481,11 +526,50 @@ export default function AppShell() {
                   <LogOut className="w-4 h-4" />
                   Logout
                 </button>
+
+                {!isStandalone && (installPrompt || isIos) && !installHintDismissed && (
+                  <button
+                    onClick={() => { void handleAddToHomeScreen(); setMobileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-semibold uppercase tracking-[0.12em] text-[#7dd3fc] bg-[#5ad3ff]/[0.08] border border-[#5ad3ff]/20 cursor-pointer"
+                  >
+                    <Download className="w-4 h-4" />
+                    Add to Home Screen
+                  </button>
+                )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </header>
+
+      <AnimatePresence>
+        {showIosInstallHint && !isStandalone && (
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
+            className="fixed bottom-20 left-3 right-3 z-[70] md:hidden premium-panel p-3"
+          >
+            <p className="text-sm text-white/85">
+              On iPhone/iPad: open Safari Share menu and choose <span className="font-semibold text-[#ffd48c]">Add to Home Screen</span>.
+            </p>
+            <div className="mt-2 flex items-center justify-end gap-2">
+              <button
+                className="premium-chip bg-white/[0.03] text-white/70"
+                onClick={() => setShowIosInstallHint(false)}
+              >
+                Close
+              </button>
+              <button
+                className="premium-chip bg-[#5ad3ff]/15 text-[#dff8ff]"
+                onClick={() => { setInstallHintDismissed(true); setShowIosInstallHint(false); }}
+              >
+                Don't show again
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Mobile Full-Screen Search Overlay ─────────────────────── */}
       <AnimatePresence>

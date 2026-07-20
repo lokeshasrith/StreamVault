@@ -284,8 +284,12 @@ export default function ContentDetailsPage() {
         year,
         episodes: content.episodes,
         seasons: content.seasons,
-        posterUrl: content.posterPath ? getImageUrl(content.posterPath, 'large') : undefined,
-        backdropUrl: content.backdropPath ? getImageUrl(content.backdropPath, 'original') : undefined,
+        posterUrl: content.posterPath
+          ? getImageUrl(content.posterPath, 'large')
+          : (content.backdropPath ? getImageUrl(content.backdropPath, 'large') : undefined),
+        backdropUrl: content.backdropPath
+          ? getImageUrl(content.backdropPath, 'original')
+          : (content.posterPath ? getImageUrl(content.posterPath, 'large') : undefined),
         rating: content.voteAverage,
         synopsis: sanitizeOverviewText(content.overview),
         budgetUSD: content.budget,
@@ -350,16 +354,17 @@ export default function ContentDetailsPage() {
   const overviewClampClass = hasLongOverview && !isOverviewExpanded
     ? 'line-clamp-5 sm:line-clamp-6'
     : '';
+  const heroBackgroundPath = content.backdropPath || content.posterPath;
 
   return (
     <div className="details-page page-shell min-h-screen bg-[#0F1014] overflow-x-hidden">
       {/* Hero Section with Backdrop */}
       <div className="relative min-h-[31rem] sm:min-h-[42rem] md:min-h-[75vh] lg:min-h-[80vh]">
-        {content.backdropPath && (
+        {heroBackgroundPath && (
           <div 
             className="absolute inset-0 bg-cover bg-center"
             style={{ 
-              backgroundImage: `url(${getImageUrl(content.backdropPath, 'original')})` 
+              backgroundImage: `url(${getImageUrl(heroBackgroundPath, 'original')})` 
             }}
           />
         )}
@@ -405,6 +410,16 @@ export default function ContentDetailsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                   >
+                    {(content.posterPath || content.backdropPath) && (
+                      <div className="mb-4 block sm:hidden">
+                        <img
+                          src={getImageUrl(content.posterPath || content.backdropPath, 'medium')}
+                          alt={content.title}
+                          className="h-44 w-30 rounded-xl border border-white/10 object-cover shadow-[0_14px_34px_rgba(0,0,0,0.45)]"
+                        />
+                      </div>
+                    )}
+
                     <h1 className="font-display text-[1.85rem] sm:text-3xl md:text-4xl lg:text-5xl xl:text-[3.5rem] font-bold text-white leading-[1.04] mb-3 sm:mb-4 md:mb-6 break-words">
                       {content.title}
                     </h1>

@@ -325,7 +325,7 @@ export default function DiscoverPage() {
               : `TMDB_${content.type.toUpperCase()}`,
         type: content.type,
         title: content.title,
-        posterUrl: content.posterPath ?? undefined,
+        posterUrl: content.posterPath ?? content.backdropPath ?? undefined,
         backdropUrl: content.backdropPath ?? undefined,
         rating: content.voteAverage,
         synopsis: content.overview,
@@ -361,6 +361,16 @@ export default function DiscoverPage() {
       contents: trendingContent,
       isLoading: loadingStates.trending
     },
+    {
+      title: "Popular Anime",
+      contents: popularAnime,
+      isLoading: loadingStates.popular
+    },
+    ...(topRankedAnime.length > 0 ? [{
+      title: "Top Ranked Anime (AnimeDB)",
+      contents: topRankedAnime,
+      isLoading: loadingStates.topRankedAnime
+    }] : []),
     ...(recommendedContent.length > 0 ? [{
       title: "Recommended For You",
       contents: recommendedContent,
@@ -407,20 +417,10 @@ export default function DiscoverPage() {
       isLoading: loadingStates.india
     },
     {
-      title: "Popular Anime",
-      contents: popularAnime,
-      isLoading: loadingStates.popular
-    },
-    {
       title: "Top Rated",
       contents: topRatedContent,
       isLoading: loadingStates.topRated
     },
-    ...(topRankedAnime.length > 0 ? [{
-      title: "Top Ranked Anime (AnimeDB)",
-      contents: topRankedAnime,
-      isLoading: loadingStates.topRankedAnime
-    }] : [])
   ], [likedRecommendedContent, trendingContent, recommendedContent, trendingIndia, hindiContent, teluguContent, tamilContent, malayalamContent, kannadaContent, popularMovies, popularTVShows, popularAnime, topRatedContent, topRankedAnime, loadingStates]);
 
   const priorityCarouselSections = useMemo(
@@ -428,6 +428,8 @@ export default function DiscoverPage() {
       section.title === 'Popular Movies'
       || section.title === 'Popular TV Shows'
       || section.title === 'Trending Now'
+      || section.title === 'Popular Anime'
+      || section.title === 'Top Ranked Anime (AnimeDB)'
     )),
     [carouselSections],
   );
@@ -545,6 +547,20 @@ export default function DiscoverPage() {
                   </button>
                 )}
               </div>
+
+              {searchMode === 'content' && (
+                <div className="premium-panel mb-4 flex items-center gap-2 overflow-x-auto scrollbar-hide px-3 py-2.5 sm:px-5">
+                  {(['all', 'movie', 'tv', 'anime'] as ContentType[]).map((type) => (
+                    <button
+                      key={`search-filter-${type}`}
+                      onClick={() => setContentType(type)}
+                      className={`premium-chip whitespace-nowrap ${contentType === type ? 'bg-[#ffc562] text-black' : 'bg-white/[0.03] text-[#A7B0BE]'}`}
+                    >
+                      {type === 'all' ? 'All' : type === 'tv' ? 'TV' : type.charAt(0).toUpperCase() + type.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {isSearching ? (
                 <div className="text-center py-12">
