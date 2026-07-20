@@ -1,6 +1,6 @@
 // Use relative URLs so Vite proxy forwards /api/* to the backend.
 // This means only the frontend port needs to be exposed (no firewall issues).
-const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
 const TRANSIENT_STATUS_CODES = new Set([502, 503, 504]);
 
 export function authHeader(token?: string): Record<string, string> {

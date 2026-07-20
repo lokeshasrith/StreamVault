@@ -104,6 +104,54 @@ public sealed class DiscoverController : ControllerBase
         return (double)intersect / smaller >= 0.7;
     }
 
+    private static string BuildYouTubeSearchEmbedUrl(string title, string kind, int? year = null)
+    {
+        var query = string.IsNullOrWhiteSpace(kind) ? $"{title} trailer" : $"{title} {kind} trailer";
+        if (year.HasValue) query += $" {year.Value}";
+        return $"https://www.youtube-nocookie.com/embed?listType=search&list={Uri.EscapeDataString(query)}";
+    }
+
+    private async Task<string?> ResolveTrailerUrlAsync(string? title, string kind, int? year, IEnumerable<dynamic>? videoResults, CancellationToken ct)
+    {
+        try
+        {
+            var bestTmdbVideo = videoResults?
+                .Where(v => string.Equals((string?)v.Site, "YouTube", StringComparison.OrdinalIgnoreCase)
+                            && !string.IsNullOrWhiteSpace((string?)v.Key)
+                            && (string.Equals((string?)v.Type, "Trailer", StringComparison.OrdinalIgnoreCase)
+                                || string.Equals((string?)v.Type, "Teaser", StringComparison.OrdinalIgnoreCase)
+                                || string.Equals((string?)v.Type, "Clip", StringComparison.OrdinalIgnoreCase)))
+                .OrderByDescending(v => string.Equals((string?)v.Type, "Trailer", StringComparison.OrdinalIgnoreCase))
+                .ThenByDescending(v => (bool?)v.Official ?? false)
+                .FirstOrDefault();
+
+            if (bestTmdbVideo != null)
+                return $"https://www.youtube-nocookie.com/embed/{bestTmdbVideo.Key}?rel=0";
+        }
+        catch
+        {
+            // Ignore malformed provider payload and continue fallback chain.
+        }
+
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            try
+            {
+                var ytId = await _youtube.FindTrailerAsync(title, kind, ct);
+                if (!string.IsNullOrWhiteSpace(ytId))
+                    return $"https://www.youtube-nocookie.com/embed/{ytId}?rel=0";
+            }
+            catch
+            {
+                // Ignore external lookup errors; we still return a YouTube search embed.
+            }
+
+            return BuildYouTubeSearchEmbedUrl(title, kind, year);
+        }
+
+        return null;
+    }
+
     private async Task<List<Content>> BuildIndianMovieFallbackAsync(int page, CancellationToken ct)
     {
         const int pageSize = 12;
@@ -230,10 +278,38 @@ public sealed class DiscoverController : ControllerBase
             var url = $"https://en.wikipedia.org/api/rest_v1/page/summary/{Uri.EscapeDataString(title)}";
             var client = _httpClientFactory.CreateClient();
             client.Timeout = TimeSpan.FromSeconds(6);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("StreamVault/1.0 (+https://github.com/lokeshasrith/StreamVault)");
+            client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 
             using var response = await client.GetAsync(url, ct);
             if (!response.IsSuccessStatusCode)
+            {
+                // Common alternate slug fallback for actor pages.
+                var actorTitle = $"{personName.Trim().Replace(' ', '_')}_actor";
+                var actorUrl = $"https://en.wikipedia.org/api/rest_v1/page/summary/{Uri.EscapeDataString(actorTitle)}";
+                using var actorResponse = await client.GetAsync(actorUrl, ct);
+                if (!actorResponse.IsSuccessStatusCode)
+                    return null;
+
+                await using var actorStream = await actorResponse.Content.ReadAsStreamAsync(ct);
+                using var actorDoc = await System.Text.Json.JsonDocument.ParseAsync(actorStream, cancellationToken: ct);
+                var actorRoot = actorDoc.RootElement;
+
+                if (actorRoot.TryGetProperty("thumbnail", out var actorThumbnail) &&
+                    actorThumbnail.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                    actorThumbnail.TryGetProperty("source", out var actorThumbSource) &&
+                    actorThumbSource.ValueKind == System.Text.Json.JsonValueKind.String)
+                {
+                    var actorImage = actorThumbSource.GetString();
+                    if (!string.IsNullOrWhiteSpace(actorImage))
+                    {
+                        _cache.Set(cacheKey, actorImage, TimeSpan.FromHours(12));
+                        return actorImage;
+                    }
+                }
+
                 return null;
+            }
 
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             using var doc = await System.Text.Json.JsonDocument.ParseAsync(stream, cancellationToken: ct);
@@ -808,7 +884,7 @@ public sealed class DiscoverController : ControllerBase
                         status = (string?)null,
                         tagline = (string?)null,
                         originalLanguage = (string?)null,
-                        trailerUrl = (string?)null,
+                        trailerUrl = await ResolveTrailerUrlAsync(imdbTitle.Title, imdbType == "tv" ? "tv show" : "movie", imdbTitle.Year, null, HttpContext.RequestAborted),
                         director = imdbTitle.Directors?.FirstOrDefault(),
                         writers = Array.Empty<string>(),
                         cast = imdbCast
@@ -909,7 +985,7 @@ public sealed class DiscoverController : ControllerBase
                         status = (string?)null,
                         tagline = (string?)null,
                         originalLanguage = (string?)null,
-                        trailerUrl = (string?)null,
+                        trailerUrl = await ResolveTrailerUrlAsync(omdbTitle.Title, omdbType == "tv" ? "tv show" : "movie", parsedYear, null, HttpContext.RequestAborted),
                         director,
                         writers,
                         cast
@@ -932,21 +1008,8 @@ public sealed class DiscoverController : ControllerBase
                 var movie = await _contentApiService.GetMovieDetailsRawAsync(id);
                 if (movie == null) return NotFound("Content not found");
 
-                var trailer = movie.Videos?.Results?
-                    .Where(v => v.Site == "YouTube" && v.Type == "Trailer")
-                    .OrderByDescending(v => v.Official)
-                    .FirstOrDefault();
-
-                string? trailerUrl = trailer != null
-                    ? $"https://www.youtube-nocookie.com/embed/{trailer.Key}?rel=0"
-                    : null;
-
-                // Fallback to YouTube search if TMDB has no trailer
-                if (trailerUrl == null && !string.IsNullOrEmpty(movie.Title))
-                {
-                    var ytId = await _youtube.FindTrailerAsync(movie.Title, "movie", HttpContext.RequestAborted);
-                    if (ytId != null) trailerUrl = $"https://www.youtube-nocookie.com/embed/{ytId}?rel=0";
-                }
+                var releaseYear = DateTime.TryParse(movie.ReleaseDate, out var movieDate) ? movieDate.Year : (int?)null;
+                var trailerUrl = await ResolveTrailerUrlAsync(movie.Title, "movie", releaseYear, movie.Videos?.Results?.Cast<dynamic>(), HttpContext.RequestAborted);
 
                 var director = movie.Credits?.Crew?.FirstOrDefault(c => c.Job == "Director");
                 var writers = movie.Credits?.Crew?
@@ -1002,20 +1065,8 @@ public sealed class DiscoverController : ControllerBase
                 var tv = await _contentApiService.GetTvDetailsRawAsync(id);
                 if (tv == null) return NotFound("Content not found");
 
-                var trailer = tv.Videos?.Results?
-                    .Where(v => v.Site == "YouTube" && v.Type == "Trailer")
-                    .OrderByDescending(v => v.Official)
-                    .FirstOrDefault();
-
-                string? trailerUrl = trailer != null
-                    ? $"https://www.youtube-nocookie.com/embed/{trailer.Key}?rel=0"
-                    : null;
-
-                if (trailerUrl == null && !string.IsNullOrEmpty(tv.Name))
-                {
-                    var ytId = await _youtube.FindTrailerAsync(tv.Name, "tv show", HttpContext.RequestAborted);
-                    if (ytId != null) trailerUrl = $"https://www.youtube-nocookie.com/embed/{ytId}?rel=0";
-                }
+                var firstAirYear = DateTime.TryParse(tv.FirstAirDate, out var tvDate) ? tvDate.Year : (int?)null;
+                var trailerUrl = await ResolveTrailerUrlAsync(tv.Name, "tv show", firstAirYear, tv.Videos?.Results?.Cast<dynamic>(), HttpContext.RequestAborted);
 
                 var creators = tv.Credits?.Crew?
                     .Where(c => c.Job == "Executive Producer" || c.Department == "Writing")
@@ -1068,7 +1119,7 @@ public sealed class DiscoverController : ControllerBase
                 var anime = await _contentApiService.GetAnimeDetailsRawAsync(id);
                 if (anime == null) return NotFound("Content not found");
 
-                // Use Jikan's built-in trailer first, then fall back to YouTube search
+                // Use Jikan's built-in trailer first, then fall back to YouTube search/embed
                 string? trailerUrl = null;
                 if (!string.IsNullOrEmpty(anime.Trailer?.YoutubeId))
                 {
@@ -1076,8 +1127,7 @@ public sealed class DiscoverController : ControllerBase
                 }
                 else if (!string.IsNullOrEmpty(anime.Title))
                 {
-                    var ytId = await _youtube.FindTrailerAsync(anime.TitleEnglish ?? anime.Title, "anime", HttpContext.RequestAborted);
-                    if (ytId != null) trailerUrl = $"https://www.youtube-nocookie.com/embed/{ytId}?rel=0";
+                    trailerUrl = await ResolveTrailerUrlAsync(anime.TitleEnglish ?? anime.Title, "anime", anime.Year, null, HttpContext.RequestAborted);
                 }
 
                 // Fetch characters in parallel with other enrichment

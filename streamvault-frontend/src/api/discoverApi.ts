@@ -1,7 +1,7 @@
 import { get } from "./http";
 
 // Use the deployed API origin in production and the Vite proxy in local development.
-const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
 
 // Updated ContentItem interface to match backend
 export interface ContentItem {
