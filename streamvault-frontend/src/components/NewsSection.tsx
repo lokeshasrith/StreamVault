@@ -1,20 +1,35 @@
 import { useState, useEffect, useRef } from 'react';
-import { Newspaper, ExternalLink, ChevronLeft, ChevronRight, Flame, TrendingUp } from 'lucide-react';
+import {
+  Newspaper,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  Flame,
+  TrendingUp,
+  Clapperboard,
+  Tv,
+  Sparkles,
+  Globe,
+  Radio,
+  BadgeDollarSign,
+  MessageSquare
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { getImageUrl, type NewsItem } from '../api/discoverApi';
 
 /* ─── Category config ───────────────────────────────────────────────────── */
-const CAT: Record<string, { gradient: string; accent: string; icon: string }> = {
-  Movies:      { gradient: 'from-red-600/90 to-orange-600/80',   accent: '#ef4444', icon: '🎬' },
-  'TV Shows':  { gradient: 'from-blue-600/90 to-cyan-600/80',    accent: '#3b82f6', icon: '📺' },
-  Anime:       { gradient: 'from-purple-600/90 to-pink-600/80',  accent: '#a855f7', icon: '⚡' },
-  Bollywood:   { gradient: 'from-amber-600/90 to-yellow-600/80', accent: '#f59e0b', icon: '🌟' },
-  India:       { gradient: 'from-orange-600/90 to-emerald-600/80', accent: '#fb923c', icon: '🪷' },
-  Streaming:   { gradient: 'from-green-600/90 to-emerald-600/80',accent: '#22c55e', icon: '📡' },
-  'Box Office':{ gradient: 'from-yellow-600/90 to-amber-600/80', accent: '#eab308', icon: '💰' },
-  Trailers:    { gradient: 'from-pink-600/90 to-rose-600/80',    accent: '#ec4899', icon: '🎥' },
-  Reviews:     { gradient: 'from-cyan-600/90 to-teal-600/80',    accent: '#06b6d4', icon: '⭐' },
+const CAT: Record<string, { gradient: string; accent: string; icon: LucideIcon }> = {
+  Movies:      { gradient: 'from-red-600/90 to-orange-600/80',   accent: '#ef4444', icon: Clapperboard },
+  'TV Shows':  { gradient: 'from-blue-600/90 to-cyan-600/80',    accent: '#3b82f6', icon: Tv },
+  Anime:       { gradient: 'from-purple-600/90 to-pink-600/80',  accent: '#a855f7', icon: Sparkles },
+  Bollywood:   { gradient: 'from-amber-600/90 to-yellow-600/80', accent: '#f59e0b', icon: Sparkles },
+  India:       { gradient: 'from-orange-600/90 to-emerald-600/80', accent: '#fb923c', icon: Globe },
+  Streaming:   { gradient: 'from-green-600/90 to-emerald-600/80',accent: '#22c55e', icon: Radio },
+  'Box Office':{ gradient: 'from-yellow-600/90 to-amber-600/80', accent: '#eab308', icon: BadgeDollarSign },
+  Trailers:    { gradient: 'from-pink-600/90 to-rose-600/80',    accent: '#ec4899', icon: Clapperboard },
+  Reviews:     { gradient: 'from-cyan-600/90 to-teal-600/80',    accent: '#06b6d4', icon: MessageSquare },
 };
-const DEFAULT_CAT = { gradient: 'from-gray-600/90 to-gray-500/80', accent: '#6b7280', icon: '📰' };
+const DEFAULT_CAT = { gradient: 'from-gray-600/90 to-gray-500/80', accent: '#6b7280', icon: Newspaper };
 const getCat = (c: string) => CAT[c] ?? DEFAULT_CAT;
 
 function getNewsImage(item: NewsItem): string | null {
@@ -46,7 +61,7 @@ function RacingTicker({ items }: { items: NewsItem[] }) {
     <div className="news-ticker relative overflow-hidden rounded-[24px] border border-white/[0.06] bg-[#11151c]/88 px-4 py-3 racing-border-top">
       <div className="absolute inset-0 bg-gradient-to-r from-red-900/20 via-black/35 to-red-900/20" />
       <div className="relative flex items-center gap-4">
-        <div className="flex-shrink-0 flex items-center gap-1.5 rounded-sm bg-gradient-to-r from-red-600 to-red-500 px-3 py-1.5 text-[10px] font-black tracking-wider text-white shadow-lg shadow-red-500/20 sm:text-xs">
+        <div className="flex-shrink-0 flex items-center gap-1.5 rounded-[10px] bg-gradient-to-r from-red-600 to-red-500 px-3 py-1.5 text-[10px] font-black tracking-wider text-white shadow-lg shadow-red-500/20 sm:text-xs">
           <Flame className="w-3 h-3" />
           NEWSWIRE
         </div>
@@ -105,10 +120,11 @@ function HeroSpotlight({ items }: { items: NewsItem[] }) {
   if (!item) return null;
 
   const cat = getCat(item.category ?? '');
+  const CatIcon = cat.icon;
   const img = getNewsImage(item);
 
   return (
-    <div className="relative min-h-[220px] overflow-hidden rounded-[28px] border border-white/[0.06] bg-[#0e1218] sm:min-h-[320px]">
+    <div className="news-hero-glow relative min-h-[220px] overflow-hidden rounded-[28px] border border-white/[0.06] bg-[#0e1218] sm:min-h-[320px]">
       {img ? (
         <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" />
       ) : (
@@ -130,16 +146,17 @@ function HeroSpotlight({ items }: { items: NewsItem[] }) {
             </span>
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-400/90 sm:text-xs">Spotlight</span>
             <span
-              className="ml-1 inline-flex items-center gap-1 rounded-sm px-2.5 py-0.5 text-[10px] font-bold text-white"
+              className="ml-1 inline-flex items-center gap-1 rounded-[10px] px-2.5 py-0.5 text-[10px] font-bold text-white"
               style={{ backgroundColor: `${cat.accent}33`, color: cat.accent }}
             >
-              {cat.icon} {item.category}
+              <CatIcon className="h-3 w-3" />
+              {item.category}
             </span>
           </div>
           <h3 className="mb-2 line-clamp-2 text-xl font-black leading-tight text-white drop-shadow-lg sm:text-2xl lg:text-3xl">{item.title}</h3>
           <div className="flex items-center gap-3 text-xs">
             <span className="font-semibold uppercase tracking-wider text-white/60">{item.source}</span>
-            <span className="rounded-sm border border-white/15 bg-black/35 px-2 py-0.5 text-[10px] font-semibold text-white/75">
+            <span className="rounded-[10px] border border-white/15 bg-black/35 px-2 py-0.5 text-[10px] font-semibold text-white/75">
               {formatPublishedAgo(item.publishedAt)}
             </span>
             <span className="flex items-center gap-1 text-white/56 transition-colors hover:text-white/80">
@@ -151,10 +168,10 @@ function HeroSpotlight({ items }: { items: NewsItem[] }) {
 
       {safeItems.length > 1 && (
         <>
-          <button onClick={() => go(-1)} className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white/56 transition-all hover:bg-black/70 hover:text-white">
+          <button onClick={() => go(-1)} className="absolute left-3 top-1/2 -translate-y-1/2 rounded-[12px] border border-white/10 bg-black/40 p-2 text-white/56 transition-all hover:bg-black/70 hover:text-white">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <button onClick={() => go(1)} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white/56 transition-all hover:bg-black/70 hover:text-white">
+          <button onClick={() => go(1)} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-[12px] border border-white/10 bg-black/40 p-2 text-white/56 transition-all hover:bg-black/70 hover:text-white">
             <ChevronRight className="w-5 h-5" />
           </button>
         </>
@@ -180,6 +197,7 @@ function HeroSpotlight({ items }: { items: NewsItem[] }) {
 /* ─── News Card with image ──────────────────────────────────────────────── */
 function NewsCard({ item }: { item: NewsItem }) {
   const cat = getCat(item.category ?? 'Entertainment');
+  const CatIcon = cat.icon;
   const img = getNewsImage(item);
 
   return (
@@ -187,7 +205,7 @@ function NewsCard({ item }: { item: NewsItem }) {
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group relative block overflow-hidden rounded-[22px] border border-white/[0.05] bg-[#12161d] transition-transform duration-300 hover:-translate-y-1"
+      className="news-card-3d group relative block overflow-hidden rounded-[22px] border border-white/[0.05] bg-[#12161d] transition-transform duration-300 hover:-translate-y-1"
     >
 
       <div className="relative h-32 sm:h-44 overflow-hidden">
@@ -199,19 +217,19 @@ function NewsCard({ item }: { item: NewsItem }) {
         ) : (
           <div className={`w-full h-full bg-gradient-to-br ${cat.gradient} relative`}>
             <div className="absolute inset-0 news-pattern opacity-20" />
-            <div className="absolute inset-0 flex items-center justify-center"><span className="text-5xl opacity-30">{cat.icon}</span></div>
+            <div className="absolute inset-0 flex items-center justify-center"><CatIcon className="h-14 w-14 opacity-30" /></div>
             <div className="absolute inset-0 bg-gradient-to-t from-[#0F1014] via-transparent to-transparent" />
           </div>
         )}
 
         <div className="absolute top-3 left-3">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-bold backdrop-blur-md"
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[10px] text-[10px] font-bold backdrop-blur-md"
             style={{ backgroundColor: cat.accent + '44', color: 'white' }}>
-            {cat.icon} {item.category}
+            <CatIcon className="h-3 w-3" /> {item.category}
           </span>
         </div>
 
-        <div className="absolute top-3 right-3 rounded-sm border border-white/15 bg-black/45 px-2 py-0.5 text-[10px] font-semibold text-white/75 backdrop-blur-md">
+        <div className="absolute top-3 right-3 rounded-[10px] border border-white/15 bg-black/45 px-2 py-0.5 text-[10px] font-semibold text-white/75 backdrop-blur-md">
           {formatPublishedAgo(item.publishedAt)}
         </div>
 
@@ -272,15 +290,15 @@ export default function NewsSection({ news, isLoading }: { news: NewsItem[]; isL
             </div>
           </div>
           <div>
-            <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+            <h2 className="section-heading text-lg sm:text-2xl text-white tracking-tight flex items-center gap-2">
               Entertainment News
-              <span className="rounded-sm border border-red-500/20 bg-red-600/20 px-2 py-0.5 text-[10px] font-black text-red-400">LIVE</span>
+              <span className="rounded-[10px] border border-red-500/20 bg-red-600/20 px-2 py-0.5 text-[10px] font-black text-red-400">Live</span>
             </h2>
             <p className="text-[11px] text-white/30 tracking-wide">Movies • TV • Anime • Streaming</p>
           </div>
         </div>
 
-        <div className="rounded-sm border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/55 sm:text-xs">
+        <div className="rounded-[10px] border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/55 sm:text-xs">
           Unified Feed
         </div>
       </div>
@@ -298,7 +316,7 @@ export default function NewsSection({ news, isLoading }: { news: NewsItem[]; isL
         <span className="text-[10px] text-white/20 font-bold uppercase tracking-[0.15em]">Hot Topics</span>
         {['Marvel', 'Netflix', 'Anime2026', 'BoxOffice', 'Bollywood', 'Disney+'].map(tag => (
           <span key={tag}
-            className="text-[10px] px-2.5 py-0.5 rounded-sm bg-white/[0.03] text-white/30 hover:text-white/60 border border-white/[0.04] hover:border-white/[0.1] transition-all cursor-default">
+            className="text-[10px] px-2.5 py-0.5 rounded-[10px] bg-white/[0.03] text-white/30 hover:text-white/60 border border-white/[0.04] hover:border-white/[0.1] transition-all cursor-default">
             #{tag}
           </span>
         ))}

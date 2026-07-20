@@ -92,8 +92,14 @@ function ContentCard({
           }}
         />
         <div className="pointer-events-none absolute inset-0 rounded-[24px] border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(90,211,255,0.08)_0%,transparent_18%,transparent_42%,rgba(4,5,8,0.28)_58%,rgba(4,5,8,0.9)_100%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(90,211,255,0.11)_0%,transparent_18%,transparent_42%,rgba(4,5,8,0.32)_58%,rgba(4,5,8,0.94)_100%)]" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top,rgba(255,197,98,0.16),transparent_68%)]" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-[2px] bg-[linear-gradient(180deg,rgba(255,209,140,0.8),rgba(255,130,85,0.2),transparent)] opacity-80" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-[linear-gradient(90deg,transparent,rgba(90,211,255,0.55),transparent)]" />
+
+        <div className="absolute left-3 top-3 rounded-[10px] border border-white/15 bg-[#090d13]/86 px-2.5 py-1">
+          <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-[#ffd9a7]">Feature</span>
+        </div>
         {/* Always-visible title at bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-[#040508] via-[#040508]/88 to-transparent rounded-b-[24px] pointer-events-none">
           <h3 className="font-display font-bold text-sm text-[#F7F1E8] line-clamp-2 leading-tight">{content.title}</h3>
@@ -191,8 +197,8 @@ function ContentCard({
         >
           <div className={`flex gap-2 ${showStatusMenu ? '' : 'pointer-events-auto'}`}>
             {onPlayTrailer && (
-              <button
-                className="rounded-2xl border border-white/10 bg-[#090d13]/90 p-2.5 text-white shadow-[0_16px_36px_rgba(0,0,0,0.32)] transition-all hover:scale-110 hover:border-[#5ad3ff]/24 hover:bg-[#0e141d] active:scale-90"
+                <button
+                  className="rounded-[14px] border border-white/10 bg-[#090d13]/92 p-2.5 text-white shadow-[0_16px_36px_rgba(0,0,0,0.32)] transition-all hover:scale-110 hover:border-[#5ad3ff]/24 hover:bg-[#0e141d] active:scale-90"
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
@@ -206,7 +212,7 @@ function ContentCard({
             {onAddToLibrary && !onStatusChange && (
               <div className="relative">
                 <button
-                  className={`rounded-2xl border p-2.5 hover:scale-110 active:scale-90 transition-all ${inLibrary ? 'border-[#6de0a1]/30 bg-[#6de0a1]/16 text-[#6de0a1]' : 'border-white/10 bg-[#090d13]/78 text-white hover:border-[#ffc562]/24 hover:bg-[#0e141d]'}`}
+                  className={`rounded-[14px] border p-2.5 hover:scale-110 active:scale-90 transition-all ${inLibrary ? 'border-[#6de0a1]/30 bg-[#6de0a1]/16 text-[#6de0a1]' : 'border-white/10 bg-[#090d13]/78 text-white hover:border-[#ffc562]/24 hover:bg-[#0e141d]'}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -221,7 +227,7 @@ function ContentCard({
             {onStatusChange && (
               <div className="relative">
                 <button
-                  className="rounded-2xl border border-[#5ad3ff]/25 bg-[#5ad3ff]/12 p-2.5 text-[#5ad3ff] hover:bg-[#5ad3ff]/20 hover:scale-110 active:scale-90 transition-all"
+                  className="rounded-[14px] border border-[#5ad3ff]/25 bg-[#5ad3ff]/12 p-2.5 text-[#5ad3ff] hover:bg-[#5ad3ff]/20 hover:scale-110 active:scale-90 transition-all"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -235,7 +241,7 @@ function ContentCard({
 
             {onRemove && (
               <button
-                className="rounded-2xl border border-[#ff7c61]/25 bg-[#ff7c61]/12 p-2.5 text-[#ff9a67] hover:bg-[#ff7c61]/20 hover:scale-110 active:scale-90 transition-all"
+                className="rounded-[14px] border border-[#ff7c61]/25 bg-[#ff7c61]/12 p-2.5 text-[#ff9a67] hover:bg-[#ff7c61]/20 hover:scale-110 active:scale-90 transition-all"
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
@@ -264,9 +270,9 @@ function ContentCard({
             {genres.length > 0 && size !== 'small' && (
               <div className="flex flex-wrap gap-1 mb-2">
                 {genres.slice(0, 2).map((genre: string) => (
-                  <span 
+                  <span
                     key={genre}
-                    className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/72"
+                    className="rounded-[10px] border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/72"
                   >
                     {genre}
                   </span>

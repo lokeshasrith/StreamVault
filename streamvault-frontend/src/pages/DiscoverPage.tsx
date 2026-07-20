@@ -464,10 +464,16 @@ export default function DiscoverPage() {
           <div className="text-center">
             {!searchQuery && (
               <>
-                <div className="flex items-center justify-center gap-3 mb-2 sm:mb-5">
-                  <h1 className="section-heading text-[1.85rem] sm:text-5xl md:text-6xl text-[#F7F1E8]">
-                    Discover
-                  </h1>
+                <div className="mx-auto mb-3 max-w-6xl premium-panel px-3 py-3 sm:mb-6 sm:px-6 sm:py-5">
+                  <div className="flex flex-col items-center justify-center gap-2 sm:gap-4">
+                    <span className="premium-kicker">Curated Daily</span>
+                    <h1 className="section-heading text-[1.95rem] sm:text-5xl md:text-6xl text-[#F7F1E8]">
+                      Discover
+                    </h1>
+                    <p className="text-[#A8B2C1] text-xs sm:text-sm uppercase tracking-[0.22em]">
+                      Streaming Intelligence Board
+                    </p>
+                  </div>
                 </div>
                 <p className="text-[#98A2B3] text-xs sm:text-base mb-3 sm:mb-8 max-w-3xl mx-auto leading-relaxed hidden sm:block">
                   A cinematic board of trending movies, TV, anime, and fast-moving headlines with a sharper, more premium streaming-portal feel.
@@ -481,9 +487,9 @@ export default function DiscoverPage() {
                         <button
                           key={type}
                           onClick={() => setContentType(type)}
-                          className={`px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] transition-all ${
+                          className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] transition-all ${
                             contentType === type
-                              ? 'bg-[linear-gradient(135deg,#ffe2a7_0%,#ffc562_52%,#ff8b5d_100%)] text-[#0b0d12] shadow-[0_12px_32px_rgba(255,149,87,0.16)]'
+                              ? 'bg-[linear-gradient(135deg,#ffd7a0_0%,#ffb45f_52%,#ff7f56_100%)] text-[#0b0d12] shadow-[0_12px_32px_rgba(255,149,87,0.2)]'
                               : 'border border-white/10 bg-[#0d1118]/78 text-[#98a2b3] hover:bg-[#111722] hover:text-[#F7F1E8]'
                           }`}
                         >
@@ -748,10 +754,10 @@ export default function DiscoverPage() {
                 {genres.map((genre) => (
                   <button
                     key={genre}
-                    className="rounded-[22px] border border-white/10 bg-[#0d1118]/78 p-3 sm:p-4 text-center group hover:bg-[#121823] hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
+                    className="rounded-[14px] border border-white/10 bg-[#0d1118]/78 p-3 sm:p-4 text-center group hover:bg-[#121823] hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
                     onClick={() => setSelectedGenre(genre)}
                   >
-                    <span className="text-[#98a2b3] text-sm font-semibold uppercase tracking-[0.1em] group-hover:text-[#F7F1E8] transition-colors">
+                    <span className="text-[#98a2b3] text-sm font-semibold uppercase tracking-[0.16em] group-hover:text-[#F7F1E8] transition-colors">
                       {genre}
                     </span>
                   </button>

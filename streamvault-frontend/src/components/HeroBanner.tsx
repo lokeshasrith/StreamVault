@@ -125,7 +125,7 @@ export default function HeroBanner({
   return (
     <div
       ref={inViewRef}
-      className={`hero-banner relative h-[60vh] sm:h-[62vh] md:h-[76vh] lg:h-[80vh] overflow-hidden ${className}`}
+      className={`hero-banner relative h-[66vh] sm:h-[70vh] md:h-[80vh] lg:h-[84vh] overflow-hidden ${className}`}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => {
         clearResumeTimer();
@@ -134,24 +134,25 @@ export default function HeroBanner({
     >
       {/* Background Image */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,188,95,0.14),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(90,211,255,0.18),transparent_24%)]" />
+        <div className="editorial-grid-bg absolute inset-0 opacity-40" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_14%,rgba(255,146,95,0.22),transparent_30%),radial-gradient(circle_at_84%_18%,rgba(90,211,255,0.2),transparent_24%)]" />
         <div 
-          className="absolute inset-0 bg-cover bg-[center_top] bg-no-repeat opacity-24 transition-opacity duration-500"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-35 transition-opacity duration-500"
           style={{
             backgroundImage: `url(${heroImage})`
           }}
         />
-        <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-end pr-4 pointer-events-none sm:pr-8 lg:left-[50%] lg:pr-12 md:left-[44%]">
-          <div className="hero-media-shell hidden h-[56%] w-[76%] transition-transform duration-500 md:block lg:h-[70%] lg:w-[72%]">
+        <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-end pr-3 pointer-events-none sm:pr-8 lg:left-[50%] lg:pr-12 md:left-[40%]">
+          <div className="hero-media-shell hidden h-[58%] w-[78%] transition-transform duration-500 md:block lg:h-[74%] lg:w-[74%]">
             <img
               src={heroImage}
               alt=""
-              className="h-full w-full object-cover object-[72%_center] select-none"
+              className="h-full w-full object-cover object-[76%_center] select-none"
               draggable={false}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#06080d]/78 via-transparent to-[#5ad3ff]/[0.04]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#06080d]/82 via-transparent to-[#5ad3ff]/[0.06]" />
             {currentContent.voteAverage > 0 && (
-              <div className="absolute right-4 top-4 premium-chip border-[#ffc562]/30 bg-[#0b0e13]/78 text-[#ffd48c]">
+              <div className="absolute right-4 top-4 premium-chip border-[#ffc562]/30 bg-[#0b0e13]/82 text-[#ffd48c]">
                 <Star className="h-3.5 w-3.5 fill-current" />
                 {formatRating(currentContent.voteAverage)} Score
               </div>
@@ -174,12 +175,15 @@ export default function HeroBanner({
       {/* Content */}
       <div className="relative z-10 h-full flex items-center">
         <div className="mx-auto w-full max-w-[1480px] px-4 sm:px-7 lg:px-8">
-          <div className="max-w-md sm:max-w-xl lg:max-w-[38rem] px-0 py-4 sm:px-3 sm:py-6 md:px-0 md:py-7">
+          <div className="max-w-md sm:max-w-xl lg:max-w-[42rem] px-0 py-4 sm:px-3 sm:py-6 md:px-0 md:py-7">
             <div>
               <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
                 <span className="premium-kicker">Tonight's Drop</span>
                 <span className="premium-chip border-[#5ad3ff]/20 bg-[#091019]/72 text-[#dcf7ff]">
                   {getContentTypeLabel(currentContent.type)}
+                </span>
+                <span className="premium-chip border-[#ff9457]/25 bg-[#120e0c]/70 text-[#ffd8c2]">
+                  Editorial Pick
                 </span>
               </div>
 
@@ -201,7 +205,7 @@ export default function HeroBanner({
 
               {/* Title */}
               <h1
-                className="hero-title section-heading font-bold text-[2rem] sm:text-5xl md:text-6xl lg:text-7xl text-white mb-3 sm:mb-5 leading-[0.94] cursor-pointer hover:text-[#fff5e7] transition-colors"
+                className="hero-title section-heading font-bold text-[2.2rem] sm:text-[4.5rem] md:text-[5.6rem] lg:text-[6.6rem] text-white mb-3 sm:mb-5 leading-[0.88] cursor-pointer hover:text-[#fff5e7] transition-colors"
                 onClick={() => onContentClick?.(currentContent)}
               >
                 {currentContent.title}
@@ -232,16 +236,16 @@ export default function HeroBanner({
 
               {/* Synopsis */}
               {currentContent.overview && (
-                <p className="hero-synopsis hidden sm:block max-w-xl text-sm md:text-base text-white/74 mb-7 md:mb-9 leading-relaxed">
+                <p className="hero-synopsis hidden sm:block max-w-2xl text-sm md:text-base text-white/78 mb-7 md:mb-9 leading-relaxed">
                   {truncateText(currentContent.overview, 150)}
                 </p>
               )}
 
               {/* Action Buttons */}
-              <div className="hero-actions flex flex-wrap gap-2 sm:gap-3">
+              <div className="hero-actions flex flex-wrap gap-2.5 sm:gap-3">
                 {onPlayTrailer && (
                   <button
-                    className="premium-button-primary inline-flex w-full items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all sm:w-auto sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
+                    className="premium-button-primary inline-flex w-full items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all hover:brightness-110 sm:w-auto sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
                     onClick={() => onPlayTrailer(currentContent)}
                   >
                     <Play className="w-4 h-4 fill-current" />
@@ -252,7 +256,7 @@ export default function HeroBanner({
                 {onAddToLibrary && (
                   <div className="relative" ref={statusMenuRef}>
                     <button
-                      className="premium-button-secondary inline-flex w-full items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer sm:w-auto sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
+                      className="premium-button-secondary inline-flex w-full items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all hover:scale-[1.03] hover:border-[#ffc562]/45 active:scale-[0.97] cursor-pointer sm:w-auto sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
                       onClick={() => setShowStatusMenu(!showStatusMenu)}
                     >
                       <Plus className="w-4 h-4" />
@@ -283,7 +287,7 @@ export default function HeroBanner({
                 
                 {onMoreInfo && (
                   <button
-                    className="premium-button-secondary inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold transition-colors sm:w-auto sm:px-6 sm:py-3 sm:text-sm"
+                    className="premium-button-secondary inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold transition-colors hover:border-[#5ad3ff]/45 sm:w-auto sm:px-6 sm:py-3 sm:text-sm"
                     onClick={() => onMoreInfo(currentContent)}
                   >
                     <Info className="w-4 h-4" />
@@ -301,13 +305,13 @@ export default function HeroBanner({
         <>
           <button
             onClick={() => goToSlide((currentIndex - 1 + contents.length) % contents.length)}
-            className="absolute left-2 top-1/2 z-20 hidden -translate-y-1/2 rounded-full border border-white/10 bg-[#090d13]/90 p-2 text-white/58 transition-all hover:text-white hover:border-[#ffc562]/24 hover:bg-[#0d1118] cursor-pointer sm:left-4 sm:block sm:p-3"
+            className="absolute left-2 top-1/2 z-20 hidden -translate-y-1/2 rounded-[14px] border border-white/10 bg-[#090d13]/90 p-2 text-white/58 transition-all hover:text-white hover:border-[#ffc562]/24 hover:bg-[#0d1118] cursor-pointer sm:left-4 sm:block sm:p-3"
           >
             <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
           </button>
           <button
             onClick={() => goToSlide((currentIndex + 1) % contents.length)}
-            className="absolute right-2 top-1/2 z-20 hidden -translate-y-1/2 rounded-full border border-white/10 bg-[#090d13]/90 p-2 text-white/58 transition-all hover:text-white hover:border-[#ffc562]/24 hover:bg-[#0d1118] cursor-pointer sm:right-4 sm:block sm:p-3"
+            className="absolute right-2 top-1/2 z-20 hidden -translate-y-1/2 rounded-[14px] border border-white/10 bg-[#090d13]/90 p-2 text-white/58 transition-all hover:text-white hover:border-[#ffc562]/24 hover:bg-[#0d1118] cursor-pointer sm:right-4 sm:block sm:p-3"
           >
             <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
           </button>
@@ -321,7 +325,7 @@ export default function HeroBanner({
             <button
               key={index}
               className={`rounded-full transition-all duration-500 cursor-pointer ${
-                index === currentIndex ? 'w-10 h-1.5 bg-[linear-gradient(90deg,#ffe2a7,#ffc562,#5ad3ff)]' : 'w-2 h-2 bg-white/24 hover:bg-white/40'
+                index === currentIndex ? 'w-12 h-1.5 bg-[linear-gradient(90deg,#ffd7a0,#ffb45f,#5ad3ff)]' : 'w-2 h-2 bg-white/24 hover:bg-white/40'
               }`}
               onClick={() => goToSlide(index)}
             />

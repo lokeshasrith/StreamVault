@@ -69,6 +69,7 @@ function ContentCarousel({
             <span className="hidden sm:inline-flex premium-chip bg-white/[0.03] text-white/62">
               {isLoading ? 'Loading' : `${contents.length} titles`}
             </span>
+            <span className="hidden md:block h-[1px] w-24 bg-[linear-gradient(90deg,rgba(255,188,95,0.8),rgba(90,211,255,0.16),transparent)]" />
           </div>
         </div>
         
@@ -84,9 +85,10 @@ function ContentCarousel({
 
       {/* Carousel Container */}
       <div className="relative rail-panel px-2.5 py-3 sm:px-4 sm:py-5">
+        <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-[radial-gradient(circle_at_12%_12%,rgba(255,172,114,0.12),transparent_22%),radial-gradient(circle_at_85%_10%,rgba(90,211,255,0.12),transparent_24%)]" />
         {/* Left Scroll Button */}
         <button
-          className="hidden sm:block absolute left-2 top-1/2 -translate-y-1/2 z-20 rounded-full border border-white/10 bg-[#090d13]/90 p-2.5 text-white/52 opacity-0 transition-all duration-300 hover:scale-110 hover:text-white group-hover:opacity-100 active:scale-90"
+          className="hidden sm:block absolute left-2 top-1/2 -translate-y-1/2 z-20 rounded-[12px] border border-white/10 bg-[#090d13]/92 p-2.5 text-white/52 opacity-0 transition-all duration-300 hover:scale-110 hover:text-white hover:border-[#ffc562]/30 group-hover:opacity-100 active:scale-90"
           onClick={() => scrollTo('left')}
         >
           <ChevronLeft className="w-6 h-6" />
@@ -94,7 +96,7 @@ function ContentCarousel({
 
         {/* Right Scroll Button */}
         <button
-          className="hidden sm:block absolute right-2 top-1/2 -translate-y-1/2 z-20 rounded-full border border-white/10 bg-[#090d13]/90 p-2.5 text-white/52 opacity-0 transition-all duration-300 hover:scale-110 hover:text-white group-hover:opacity-100 active:scale-90"
+          className="hidden sm:block absolute right-2 top-1/2 -translate-y-1/2 z-20 rounded-[12px] border border-white/10 bg-[#090d13]/92 p-2.5 text-white/52 opacity-0 transition-all duration-300 hover:scale-110 hover:text-white hover:border-[#5ad3ff]/30 group-hover:opacity-100 active:scale-90"
           onClick={() => scrollTo('right')}
         >
           <ChevronRight className="w-6 h-6" />
@@ -103,7 +105,7 @@ function ContentCarousel({
         {/* Scrollable Content */}
         <div
           ref={scrollRef}
-          className={`flex overflow-x-auto scrollbar-hide ${containerClasses[size]} pb-2 sm:pb-3`}
+          className={`relative z-[1] flex overflow-x-auto scrollbar-hide ${containerClasses[size]} pb-2 sm:pb-3`}
           style={{ 
             scrollbarWidth: 'none',
             msOverflowStyle: 'none'
@@ -241,9 +243,9 @@ export function GenreTabs({
         {genres.map((genre) => (
           <button
             key={genre}
-            className={`flex-shrink-0 rounded-full px-4 py-2.5 text-xs sm:text-sm font-semibold uppercase tracking-[0.12em] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
+            className={`flex-shrink-0 rounded-[12px] px-4 py-2.5 text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
               activeGenre === genre
-                ? 'bg-[linear-gradient(135deg,#ffe2a7_0%,#ffc562_52%,#ff8b5d_100%)] text-[#0b0d12] shadow-[0_12px_32px_rgba(255,149,87,0.16)]'
+                ? 'bg-[linear-gradient(135deg,#ffd7a0_0%,#ffb45f_52%,#ff7f56_100%)] text-[#0b0d12] shadow-[0_12px_32px_rgba(255,149,87,0.2)]'
                 : 'border border-white/10 bg-[#0d1118]/78 text-[#98a2b3] hover:bg-[#101620] hover:text-[#F7F1E8]'
             }`}
             onClick={() => onGenreChange?.(genre)}
