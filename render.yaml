@@ -17,6 +17,10 @@ services:
         value: StreamVault
       - key: Tmdb__ApiKey
         sync: false          # Set manually (optional but needed for content)
+      - key: ExternalApis__TmdbApiKey
+        sync: false          # Optional fallback key name supported by backend
+      - key: TMDB_API_KEY
+        sync: false          # Optional direct env fallback supported by backend
       - key: AllowedOrigins
         value: "https://lokeshasrith.github.io"
       - key: ConnectionStrings__Default

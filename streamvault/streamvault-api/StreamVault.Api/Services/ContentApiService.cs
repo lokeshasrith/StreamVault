@@ -97,21 +97,33 @@ public class ContentApiService : IContentApiService
 
     private static string ResolveTmdbApiKey(IConfiguration config)
     {
+        static string Clean(string? key) => (key ?? string.Empty).Trim().Trim('"', '\'');
+
         // Preferred legacy path used by this service
-        var key = config["ExternalApis:TmdbApiKey"];
+        var key = Clean(config["ExternalApis:TmdbApiKey"]);
+        if (!string.IsNullOrWhiteSpace(key)) return key;
+
+        // Explicit environment variable style for ExternalApis section
+        key = Clean(config["ExternalApis__TmdbApiKey"]);
         if (!string.IsNullOrWhiteSpace(key)) return key;
 
         // New options path (supports key rotation in user-secrets)
         var rotated = config.GetSection("Tmdb:ApiKeys").Get<string[]>()
             ?.FirstOrDefault(k => !string.IsNullOrWhiteSpace(k));
-        if (!string.IsNullOrWhiteSpace(rotated)) return rotated;
+        if (!string.IsNullOrWhiteSpace(rotated)) return Clean(rotated);
 
-        key = config["Tmdb:ApiKey"];
+        key = Clean(config["Tmdb:ApiKey"]);
+        if (!string.IsNullOrWhiteSpace(key)) return key;
+
+        // Explicit environment variable style for Tmdb section
+        key = Clean(config["Tmdb__ApiKey"]);
         if (!string.IsNullOrWhiteSpace(key)) return key;
 
         // Optional direct environment variable fallback
-        key = config["TMDB_API_KEY"];
-        return key ?? string.Empty;
+        key = Clean(config["TMDB_API_KEY"]);
+        if (!string.IsNullOrWhiteSpace(key)) return key;
+
+        return string.Empty;
     }
 
     public ContentApiService(IHttpClientFactory httpClientFactory, IConfiguration config, IMemoryCache cache, ImdbApiClient imdbApi)

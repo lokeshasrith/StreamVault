@@ -246,17 +246,10 @@ function buildProxyImageUrl(url: string): string {
 }
 
 function shouldBypassProxy(url: string): boolean {
-  try {
-    const host = new URL(url).host.toLowerCase();
-    return host === 'm.media-amazon.com'
-      || host === 'media-amazon.com'
-      || host === 'ia.media-imdb.com'
-      || host === 'media-imdb.com'
-      || host === 'imdb.com'
-      || host.endsWith('.imdb.com');
-  } catch {
-    return false;
-  }
+  // Route all remote images through backend proxy for consistent loading
+  // in embedded browsers and restricted network environments.
+  void url;
+  return false;
 }
 
 export const PLACEHOLDER_POSTER = `data:image/svg+xml,${encodeURIComponent(
