@@ -108,7 +108,7 @@ public sealed class DiscoverController : ControllerBase
     {
         var query = string.IsNullOrWhiteSpace(kind) ? $"{title} trailer" : $"{title} {kind} trailer";
         if (year.HasValue) query += $" {year.Value}";
-        return $"https://www.youtube-nocookie.com/embed?listType=search&list={Uri.EscapeDataString(query)}";
+        return $"https://www.youtube.com/embed?listType=search&list={Uri.EscapeDataString(query)}";
     }
 
     private async Task<string?> ResolveTrailerUrlAsync(string? title, string kind, int? year, IEnumerable<dynamic>? videoResults, CancellationToken ct)

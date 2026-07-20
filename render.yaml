@@ -16,11 +16,11 @@ services:
       - key: Jwt__Audience
         value: StreamVault
       - key: Tmdb__ApiKey
-        sync: false          # Set manually (optional but needed for content)
+        value: "bd7e55dec425e38fa6389ee2f088543f"
       - key: ExternalApis__TmdbApiKey
-        sync: false          # Optional fallback key name supported by backend
+        value: "bd7e55dec425e38fa6389ee2f088543f"
       - key: TMDB_API_KEY
-        sync: false          # Optional direct env fallback supported by backend
+        value: "bd7e55dec425e38fa6389ee2f088543f"
       - key: AllowedOrigins
         value: "https://lokeshasrith.github.io"
       - key: ConnectionStrings__Default
