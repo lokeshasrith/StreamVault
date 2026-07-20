@@ -14,7 +14,7 @@ function CreditCard({ credit, onClick }: { credit: PersonCredit; onClick?: () =>
   return (
     <button
       onClick={onClick}
-      className="flex-shrink-0 w-28 text-center group cursor-pointer"
+      className="flex-shrink-0 w-28 text-center group cursor-pointer snap-start"
     >
       <div className="w-28 h-40 rounded-lg overflow-hidden bg-[#1C1E24] mb-2 ring-1 ring-[#2A2D35] group-hover:ring-[#808080]/40 transition-all">
         {credit.posterPath ? (
@@ -76,7 +76,7 @@ function FilmographySection({ title, icon: Icon, credits, iconColor, onMovieClic
           </button>
         )}
       </div>
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory scroll-px-1">
         {visibleCredits.map((credit) => (
           <CreditCard
             key={`${credit.id}-${credit.character || credit.title}`}
@@ -124,7 +124,7 @@ export default function PersonProfileModal({ personId, personSource, onClose, on
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="person-modal fixed inset-0 z-[60] flex items-start justify-center pt-8 sm:pt-16 pb-4 sm:pb-8 px-2 sm:px-4 overflow-y-auto"
+          className="person-modal fixed inset-0 z-[60] flex items-end sm:items-start justify-center pt-0 sm:pt-16 pb-0 sm:pb-8 px-0 sm:px-4 overflow-y-auto"
           onClick={onClose}
         >
           {/* Backdrop */}
@@ -136,13 +136,13 @@ export default function PersonProfileModal({ personId, personSource, onClose, on
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-3xl max-h-[90vh] sm:max-h-[85vh] rounded-xl bg-[#0F1014] border border-[#2A2D35] shadow-2xl overflow-hidden mx-0 sm:mx-4"
+            className="relative w-full max-w-3xl h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[85vh] rounded-none sm:rounded-xl bg-[#0F1014] border border-[#2A2D35] shadow-2xl overflow-hidden mx-0 sm:mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-[#1C1E24] hover:bg-[#25272E] text-[#808080] hover:text-[#E5E5E5] transition-all cursor-pointer"
+              className="absolute top-[max(env(safe-area-inset-top),0.75rem)] sm:top-4 right-3 sm:right-4 z-10 p-2 rounded-lg bg-[#1C1E24] hover:bg-[#25272E] text-[#808080] hover:text-[#E5E5E5] transition-all cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -152,7 +152,7 @@ export default function PersonProfileModal({ personId, personSource, onClose, on
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#808080]" />
               </div>
             ) : person ? (
-              <div className="p-4 md:p-8 space-y-5 md:space-y-8 overflow-y-auto max-h-[88vh] sm:max-h-[80vh]">
+              <div className="p-3 sm:p-4 md:p-8 pt-[calc(1.75rem+env(safe-area-inset-top))] sm:pt-4 space-y-5 md:space-y-8 overflow-y-auto max-h-[calc(100dvh-0.5rem)] sm:max-h-[80vh] pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:pb-6">
                 {/* Header: Photo + Info */}
                 <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                   <div className="flex-shrink-0 mx-auto md:mx-0">

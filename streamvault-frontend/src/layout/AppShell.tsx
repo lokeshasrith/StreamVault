@@ -184,6 +184,24 @@ export default function AppShell() {
   const [mobileSearchOpen, setMobileSearchOpen] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    setMobileMenuOpen(false);
+    setMobileSearchOpen(false);
+  }, [location.pathname]);
+
+  React.useEffect(() => {
+    if (!mobileSearchOpen && !mobileMenuOpen) {
+      document.body.style.overflow = "";
+      return;
+    }
+
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mobileSearchOpen, mobileMenuOpen]);
+
   if (!activeUserKey || isMismatchedRouteUser) {
     return <Navigate to={activeUserKey ? `/app/${activeUserKey}` : "/auth"} replace />;
   }
@@ -603,7 +621,7 @@ export default function AppShell() {
       </main>
 
       {/* ── Mobile Bottom Nav ──────────────────────────────────────── */}
-      <nav className="mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] bg-[#0b0f15]/95 backdrop-blur-xl" style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}>
+      <nav className="mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] bg-[#0b0f15]/95 backdrop-blur-xl" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.35rem)' }}>
         <div className="flex items-center justify-between gap-1 px-1.5 pt-2 pb-1">
           {MOBILE_NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink
@@ -611,8 +629,8 @@ export default function AppShell() {
                 to={withUserRoot(to)}
               end={end}
               className={({ isActive }) =>
-                `flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-wider transition-all ${
-                  isActive ? "text-[#ffc562]" : "text-[#6b7280]"
+                `flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-wider transition-all active:scale-[0.96] ${
+                  isActive ? "text-[#ffc562] bg-[#ffc562]/8 border border-[#ffc562]/18" : "text-[#6b7280] border border-transparent"
                 }`
               }
             >
@@ -622,7 +640,7 @@ export default function AppShell() {
           ))}
           <button
             onClick={() => { logout(); nav("/auth"); }}
-            className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] cursor-pointer"
+            className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] border border-transparent active:scale-[0.96] cursor-pointer"
           >
             <LogOut className="w-5 h-5" />
             <span className="max-w-full truncate">Logout</span>

@@ -193,7 +193,7 @@ function ContentCard({
 
         {/* Hover Actions */}
         <div
-          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 z-10 ${showStatusMenu ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100 pointer-events-none'}`}
+          className={`touch-card-actions absolute inset-0 flex items-center justify-center transition-opacity duration-300 z-10 ${showStatusMenu ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100 pointer-events-none'}`}
         >
           <div className={`flex gap-2 ${showStatusMenu ? '' : 'pointer-events-auto'}`}>
             {onPlayTrailer && (
