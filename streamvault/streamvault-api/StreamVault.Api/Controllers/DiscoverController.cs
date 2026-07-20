@@ -93,6 +93,29 @@ public sealed class DiscoverController : ControllerBase
         System.Text.RegularExpressions.Regex.Replace(
             title.ToLowerInvariant(), @"^(the|a|an|marvel'?s?)\s+|\s*[:;,\-–—]\s*.*$|[''\""\.\!\?]", "").Trim();
 
+    // Generate robust title variants for external rating lookups (OMDb/IMDb),
+    // especially for regional titles that may include subtitles or punctuation.
+    private static IReadOnlyList<string> BuildTitleCandidates(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title)) return Array.Empty<string>();
+
+        static string Clean(string value) => System.Text.RegularExpressions.Regex
+            .Replace(value, @"\s+", " ")
+            .Trim();
+
+        var raw = Clean(title);
+        var noBracket = Clean(System.Text.RegularExpressions.Regex.Replace(raw, @"\s*[\(\[].*?[\)\]]\s*", " "));
+        var beforeColon = raw.Split(':', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? raw;
+        var beforeDash = raw.Split('-', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? raw;
+        var normalized = NormalizeTitle(raw);
+
+        return new[] { raw, noBracket, beforeColon, beforeDash, normalized }
+            .Select(Clean)
+            .Where(s => !string.IsNullOrWhiteSpace(s) && s.Length >= 2)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
     // Simple similarity check: are titles >70% overlapping in words?
     private static bool LevenshteinSimilar(string a, string b)
     {
@@ -2273,11 +2296,28 @@ public sealed class DiscoverController : ControllerBase
         double? imdbRating = null;
         long? imdbVoteCount = null;
         var resolvedImdbId = imdbId;
+        var titleCandidates = BuildTitleCandidates(title);
 
         try
         {
             if (string.IsNullOrEmpty(resolvedImdbId))
-                resolvedImdbId = await _omdb.SearchImdbIdAsync(title, year, ct);
+            {
+                foreach (var candidate in titleCandidates)
+                {
+                    resolvedImdbId = await _omdb.SearchImdbIdAsync(candidate, year, ct);
+                    if (!string.IsNullOrWhiteSpace(resolvedImdbId)) break;
+                }
+
+                // Some records fail when year is too strict or differs by regional release.
+                if (string.IsNullOrWhiteSpace(resolvedImdbId))
+                {
+                    foreach (var candidate in titleCandidates)
+                    {
+                        resolvedImdbId = await _omdb.SearchImdbIdAsync(candidate, null, ct);
+                        if (!string.IsNullOrWhiteSpace(resolvedImdbId)) break;
+                    }
+                }
+            }
         }
         catch { /* OMDb may be unavailable */ }
 
@@ -2288,6 +2328,16 @@ public sealed class DiscoverController : ControllerBase
             omdbRatings = !string.IsNullOrEmpty(resolvedImdbId)
                 ? await _omdb.GetByImdbIdAsync(resolvedImdbId, ct)
                 : await _omdb.SearchByTitleAsync(title, year, ct);
+
+            if (omdbRatings == null)
+            {
+                foreach (var candidate in titleCandidates)
+                {
+                    omdbRatings = await _omdb.SearchByTitleAsync(candidate, year, ct)
+                        ?? await _omdb.SearchByTitleAsync(candidate, null, ct);
+                    if (omdbRatings != null) break;
+                }
+            }
         }
         catch { /* OMDb may be unavailable */ }
 
@@ -2312,13 +2362,24 @@ public sealed class DiscoverController : ControllerBase
                 }
                 else
                 {
-                    var candidates = await _imdbApi.SearchAsync(title, ct);
+                    var bestResults = new List<Content>();
+                    foreach (var candidate in titleCandidates)
+                    {
+                        var partial = await _imdbApi.SearchAsync(candidate, ct);
+                        if (partial.Count > 0) bestResults.AddRange(partial);
+                    }
+
+                    var candidates = bestResults
+                        .GroupBy(c => c.ExternalId, StringComparer.OrdinalIgnoreCase)
+                        .Select(g => g.First())
+                        .ToList();
+
                     var best = candidates
                         .Where(c => c.ExternalId.StartsWith("tt", StringComparison.OrdinalIgnoreCase))
                         .OrderByDescending(c =>
                             (year.HasValue && c.Year == year.Value ? 3 : 0) +
-                            (c.Title.Equals(title, StringComparison.OrdinalIgnoreCase) ? 2 : 0) +
-                            (c.Title.Contains(title, StringComparison.OrdinalIgnoreCase) ? 1 : 0))
+                            (titleCandidates.Any(t => c.Title.Equals(t, StringComparison.OrdinalIgnoreCase)) ? 2 : 0) +
+                            (titleCandidates.Any(t => c.Title.Contains(t, StringComparison.OrdinalIgnoreCase) || t.Contains(c.Title, StringComparison.OrdinalIgnoreCase)) ? 1 : 0))
                         .FirstOrDefault();
 
                     if (best != null)
