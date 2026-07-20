@@ -14,9 +14,9 @@ function CreditCard({ credit, onClick }: { credit: PersonCredit; onClick?: () =>
   return (
     <button
       onClick={onClick}
-      className="flex-shrink-0 w-28 text-center group cursor-pointer snap-start"
+      className="person-credit-card flex-shrink-0 w-28 text-center group cursor-pointer snap-start"
     >
-      <div className="w-28 h-40 rounded-lg overflow-hidden bg-[#1C1E24] mb-2 ring-1 ring-[#2A2D35] group-hover:ring-[#808080]/40 transition-all">
+      <div className="h-40 rounded-lg overflow-hidden bg-[#1C1E24] mb-2 ring-1 ring-[#2A2D35] group-hover:ring-[#808080]/40 transition-all">
         {credit.posterPath ? (
           <img
             src={getImageUrl(credit.posterPath, 'small')}

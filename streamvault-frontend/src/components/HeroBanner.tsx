@@ -245,7 +245,7 @@ export default function HeroBanner({
               <div className="hero-actions flex flex-wrap gap-2.5 sm:gap-3">
                 {onPlayTrailer && (
                   <button
-                    className="premium-button-primary inline-flex w-full items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all hover:brightness-110 sm:w-auto sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
+                    className="premium-button-primary inline-flex w-[calc(50%-0.325rem)] min-w-[8.25rem] items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all hover:brightness-110 sm:w-auto sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
                     onClick={() => onPlayTrailer(currentContent)}
                   >
                     <Play className="w-4 h-4 fill-current" />
@@ -256,7 +256,7 @@ export default function HeroBanner({
                 {onAddToLibrary && (
                   <div className="relative" ref={statusMenuRef}>
                     <button
-                      className="premium-button-secondary inline-flex w-full items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all hover:scale-[1.03] hover:border-[#ffc562]/45 active:scale-[0.97] cursor-pointer sm:w-auto sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
+                      className="premium-button-secondary inline-flex w-[calc(50%-0.325rem)] min-w-[8.25rem] items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all hover:scale-[1.03] hover:border-[#ffc562]/45 active:scale-[0.97] cursor-pointer sm:w-auto sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
                       onClick={() => setShowStatusMenu(!showStatusMenu)}
                     >
                       <Plus className="w-4 h-4" />
@@ -305,13 +305,13 @@ export default function HeroBanner({
         <>
           <button
             onClick={() => goToSlide((currentIndex - 1 + contents.length) % contents.length)}
-            className="absolute left-2 top-1/2 z-20 hidden -translate-y-1/2 rounded-[14px] border border-white/10 bg-[#090d13]/90 p-2 text-white/58 transition-all hover:text-white hover:border-[#ffc562]/24 hover:bg-[#0d1118] cursor-pointer sm:left-4 sm:block sm:p-3"
+            className="hero-arrow hero-arrow-left absolute left-1.5 top-1/2 z-20 -translate-y-1/2 rounded-[14px] border border-white/10 bg-[#090d13]/90 p-2 text-white/58 transition-all hover:text-white hover:border-[#ffc562]/24 hover:bg-[#0d1118] cursor-pointer sm:left-4 sm:p-3"
           >
             <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
           </button>
           <button
             onClick={() => goToSlide((currentIndex + 1) % contents.length)}
-            className="absolute right-2 top-1/2 z-20 hidden -translate-y-1/2 rounded-[14px] border border-white/10 bg-[#090d13]/90 p-2 text-white/58 transition-all hover:text-white hover:border-[#ffc562]/24 hover:bg-[#0d1118] cursor-pointer sm:right-4 sm:block sm:p-3"
+            className="hero-arrow hero-arrow-right absolute right-1.5 top-1/2 z-20 -translate-y-1/2 rounded-[14px] border border-white/10 bg-[#090d13]/90 p-2 text-white/58 transition-all hover:text-white hover:border-[#ffc562]/24 hover:bg-[#0d1118] cursor-pointer sm:right-4 sm:p-3"
           >
             <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
           </button>

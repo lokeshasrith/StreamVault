@@ -366,6 +366,49 @@
     .hero-title {
       font-size: 1.72rem;
       line-height: 0.98;
+      letter-spacing: -0.01em;
+    }
+
+    .hero-actions {
+      width: 100%;
+      gap: 0.35rem;
+    }
+
+    .hero-actions > button,
+    .hero-actions > div {
+      width: calc(50% - 0.2rem) !important;
+      min-width: 0 !important;
+    }
+
+    .hero-actions > button:last-child {
+      width: 100% !important;
+    }
+
+    .hero-actions button {
+      padding-left: 0.6rem;
+      padding-right: 0.6rem;
+      font-size: 0.67rem;
+    }
+
+    .hero-arrow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      min-height: 36px;
+      top: auto;
+      bottom: 0.68rem;
+      transform: none;
+      background: rgba(9, 13, 19, 0.82);
+      backdrop-filter: blur(7px);
+    }
+
+    .hero-arrow-left {
+      left: 0.45rem;
+    }
+
+    .hero-arrow-right {
+      right: 0.45rem;
     }
 
     .hero-indicators {
@@ -470,6 +513,41 @@
       padding-bottom: 0.5rem;
     }
 
+    .person-modal > .relative {
+      border-top-left-radius: 18px;
+      border-top-right-radius: 18px;
+    }
+
+    .person-modal .person-credit-card {
+      width: 5.8rem;
+    }
+
+    .person-modal .person-credit-card > div {
+      width: 5.8rem;
+      height: 8.4rem;
+    }
+
+    .person-modal h2 {
+      font-size: 1.1rem;
+      line-height: 1.12;
+    }
+
+    .person-modal p,
+    .person-modal span,
+    .person-modal a,
+    .person-modal button {
+      word-break: break-word;
+    }
+
+    .mobile-search-header input {
+      font-size: 0.95rem;
+    }
+
+    .mobile-search-header button {
+      min-width: 2.2rem;
+      min-height: 2.2rem;
+    }
+
     .details-page .glass-card {
       border-radius: 18px;
     }
@@ -494,6 +572,11 @@
       padding-top: 0.2rem;
     }
 
+    .mobile-top-header .premium-panel {
+      padding-top: 0.35rem;
+      padding-bottom: 0.35rem;
+    }
+
     .mobile-content-shell {
       padding-top: 2.6rem;
     }
@@ -514,8 +597,18 @@
       font-size: 0.52rem;
     }
 
+    .mobile-bottom-nav svg {
+      width: 0.9rem;
+      height: 0.9rem;
+    }
+
     .hero-banner {
       height: 94vh;
+    }
+
+    .hero-banner .premium-chip {
+      padding: 0.28rem 0.52rem;
+      font-size: 0.58rem;
     }
 
     .hero-banner .premium-kicker {
@@ -541,6 +634,25 @@
       padding-top: 0.5rem;
       padding-bottom: 0.5rem;
       font-size: 0.68rem;
+    }
+
+    .hero-arrow {
+      min-width: 34px;
+      min-height: 34px;
+      bottom: 0.5rem;
+      top: auto;
+      transform: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-arrow-left {
+      left: 0.45rem;
+    }
+
+    .hero-arrow-right {
+      right: 0.45rem;
     }
 
     .hero-indicators {
@@ -643,6 +755,19 @@
     .person-modal {
       padding-top: 0.35rem;
       padding-bottom: 0.35rem;
+    }
+
+    .person-modal > .relative {
+      max-height: 98dvh;
+    }
+
+    .person-modal .person-credit-card {
+      width: 5.9rem;
+    }
+
+    .person-modal .person-credit-card > div {
+      width: 5.9rem;
+      height: 8.6rem;
     }
   }
 
