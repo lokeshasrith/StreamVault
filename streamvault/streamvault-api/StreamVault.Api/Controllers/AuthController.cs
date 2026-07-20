@@ -33,12 +33,20 @@ public sealed class AuthController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
+        var normalizedEmail = dto.Email?.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+            return BadRequest(new { error = "Email is required" });
+
+        var normalizedDisplayName = string.IsNullOrWhiteSpace(dto.DisplayName)
+            ? null
+            : dto.DisplayName.Trim();
+
         var user = new ApplicationUser
         {
             Id = Guid.NewGuid(),
-            UserName = dto.Email,
-            Email = dto.Email,
-            DisplayName = dto.DisplayName
+            UserName = normalizedEmail,
+            Email = normalizedEmail,
+            DisplayName = normalizedDisplayName
         };
         var result = await _userManager.CreateAsync(user, dto.Password);
         if (!result.Succeeded) return BadRequest(result.Errors);
@@ -51,7 +59,11 @@ public sealed class AuthController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var user = await _userManager.FindByEmailAsync(dto.Email);
+        var normalizedEmail = dto.Email?.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+            return Unauthorized(new { error = "Invalid email or password" });
+
+        var user = await _userManager.FindByEmailAsync(normalizedEmail);
         if (user is null) return Unauthorized(new { error = "Invalid email or password" });
 
         if (await _userManager.IsLockedOutAsync(user))
