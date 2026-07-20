@@ -52,8 +52,11 @@ async function fetchWithRetry(input: RequestInfo | URL, init?: RequestInit, retr
 export async function get<T>(path: string, token?: string, options?: { silent401?: boolean }) {
   const r = await fetchWithRetry(`${API_BASE}${path}`, { headers: { ...authHeader(token) } });
   if (r.status === 401) {
-    if (!options?.silent401) handleUnauthorized();
-    throw new Error("Session expired");
+    if (token) {
+      if (!options?.silent401) handleUnauthorized();
+      throw new Error("Session expired");
+    }
+    throw new Error(await parseErrorMessage(r));
   }
   if (!r.ok) throw new Error(await parseErrorMessage(r));
   return r.json() as Promise<T>;
@@ -65,7 +68,14 @@ export async function post<T>(path: string, body: unknown, token?: string) {
     headers: { "Content-Type": "application/json", ...authHeader(token) },
     body: JSON.stringify(body),
   });
-  if (r.status === 401) { handleUnauthorized(); throw new Error("Session expired"); }
+  if (r.status === 401) {
+    // Only clear session for authenticated mutations; login/register should return real API errors.
+    if (token) {
+      handleUnauthorized();
+      throw new Error("Session expired");
+    }
+    throw new Error(await parseErrorMessage(r));
+  }
   if (!r.ok) throw new Error(await parseErrorMessage(r));
   return r.json() as Promise<T>;
 }

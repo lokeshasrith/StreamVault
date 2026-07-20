@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { authHeader, get } from './http';
+import { authHeader, get, post } from './http';
 
 describe('http authHeader', () => {
   it('returns auth header when token exists', () => {
@@ -88,5 +88,21 @@ describe('http get', () => {
     expect(localStorage.getItem('streamvault_jwt')).toBe('jwt');
     expect(localStorage.getItem('streamvault_user_key')).toBe('user-key');
     expect(dispatchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('http post', () => {
+  it('returns backend auth error for unauthenticated login failures', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: 'Invalid email or password' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    );
+
+    await expect(post('/api/auth/login', { email: 'x@y.com', password: 'wrong' })).rejects.toThrow('Invalid email or password');
   });
 });
