@@ -70,6 +70,18 @@ public sealed class AuthController : ControllerBase
             return Unauthorized(new { error = "Account temporarily locked. Please try again later." });
 
         var passwordValid = await _userManager.CheckPasswordAsync(user, dto.Password);
+
+        // Mobile autofill/keyboards sometimes append leading/trailing spaces.
+        // If primary check fails and trimming changes the input, retry once.
+        if (!passwordValid && !string.IsNullOrEmpty(dto.Password))
+        {
+            var trimmedPassword = dto.Password.Trim();
+            if (!string.Equals(trimmedPassword, dto.Password, StringComparison.Ordinal))
+            {
+                passwordValid = await _userManager.CheckPasswordAsync(user, trimmedPassword);
+            }
+        }
+
         if (!passwordValid)
         {
             await _userManager.AccessFailedAsync(user);
