@@ -64,7 +64,13 @@ public sealed class AuthController : ControllerBase
             return Unauthorized(new { error = "Invalid email or password" });
 
         var user = await _userManager.FindByEmailAsync(normalizedEmail);
-        if (user is null) return Unauthorized(new { error = "Invalid email or password" });
+        if (user is null)
+        {
+            return Unauthorized(new
+            {
+                error = "Account not found for this email. If you created it before the recent database fix, please sign up once again."
+            });
+        }
 
         if (await _userManager.IsLockedOutAsync(user))
             return Unauthorized(new { error = "Account temporarily locked. Please try again later." });
