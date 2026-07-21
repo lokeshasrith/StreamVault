@@ -84,9 +84,17 @@ function ContentCard({
               return;
             }
 
-            // Stage 2: final placeholder.
-            if (stage !== '2') {
+            // Stage 2: if proxied remote image fails, try original direct URL once.
+            const currentSrc = target.currentSrc || target.src;
+            if (stage !== '2' && currentSrc.includes('/api/img/proxy?url=') && preferredPosterPath?.startsWith('http')) {
               target.dataset.fallbackStage = '2';
+              target.src = preferredPosterPath;
+              return;
+            }
+
+            // Stage 3: final placeholder.
+            if (stage !== '3') {
+              target.dataset.fallbackStage = '3';
               target.src = PLACEHOLDER_POSTER;
             }
           }}

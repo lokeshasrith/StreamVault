@@ -780,6 +780,20 @@ public sealed class DiscoverController : ControllerBase
         }
     }
 
+    [HttpGet("anime/upcoming")]
+    public async Task<IActionResult> GetUpcomingAnime([FromQuery] int page = 1)
+    {
+        try
+        {
+            var results = await _contentApiService.GetUpcomingAnimeAsync(page);
+            return Ok(WrapItems(results));
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { error = "Failed to fetch upcoming anime" });
+        }
+    }
+
     [HttpGet("browse")]
     public async Task<IActionResult> BrowseByGenre([FromQuery] string genre, [FromQuery] string? type, [FromQuery] int page = 1)
     {

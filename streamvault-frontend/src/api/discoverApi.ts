@@ -772,6 +772,13 @@ class DiscoverAPI {
     return resp.items ?? [];
   }
 
+  // Get upcoming anime releases (future/next-season titles)
+  async getUpcomingAnime(page: number = 1): Promise<ContentItem[]> {
+    const params = new URLSearchParams({ page: page.toString() });
+    const resp = await get<{ items: ContentItem[] }>(`/api/discover/anime/upcoming?${params}`);
+    return resp.items ?? [];
+  }
+
   // Get person (actor/director) full details with filmography
   async getPersonDetails(personId: number | string, source?: string): Promise<PersonDetails> {
     const params = source ? `?source=${source}` : '';

@@ -21,6 +21,7 @@ public interface IContentApiService
     Task<List<Content>> GetTopRatedMoviesAsync(int page = 1, string? region = null);
     Task<List<Content>> GetTopRatedTvShowsAsync(int page = 1, string? region = null);
     Task<List<Content>> GetTopRatedAnimeAsync(int page = 1);
+    Task<List<Content>> GetUpcomingAnimeAsync(int page = 1);
     Task<TmdbMovieDetails?> GetMovieDetailsRawAsync(string tmdbId);
     Task<TmdbTvDetails?> GetTvDetailsRawAsync(string tmdbId);
     Task<JikanAnime?> GetAnimeDetailsRawAsync(string malId);
@@ -740,6 +741,32 @@ public class ContentApiService : IContentApiService
         }
     }
 
+    public async Task<List<Content>> GetUpcomingAnimeAsync(int page = 1)
+    {
+        try
+        {
+            var url = $"{_jikanBaseUrl}/seasons/upcoming?page={page}&limit=20";
+            var response = await GetJikanCachedAsync(url);
+            var jikanResponse = JsonSerializer.Deserialize<JikanSearchResponse>(response, JsonOptions());
+
+            return jikanResponse?.Data?
+                .Select(item =>
+                {
+                    var mapped = MapJikanAnimeToContent(item);
+                    mapped.GenresCsv = string.IsNullOrWhiteSpace(mapped.GenresCsv)
+                        ? "Upcoming"
+                        : $"{mapped.GenresCsv},Upcoming";
+                    return mapped;
+                })
+                .ToList() ?? new List<Content>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting upcoming anime: {ex.Message}");
+            return new List<Content>();
+        }
+    }
+
     // Mapping methods
     private static Content MapTmdbMovieToContent(TmdbMovie movie) => new()
     {
@@ -781,8 +808,18 @@ public class ContentApiService : IContentApiService
         Title = anime.TitleEnglish ?? anime.Title ?? "",
         Year = anime.Year,
         Episodes = anime.Episodes,
-        PosterUrl = ToCdnUrl(anime.Images?.Jpg?.LargeImageUrl ?? anime.Images?.Webp?.LargeImageUrl),
-        BackdropUrl = ToCdnUrl(anime.Images?.Jpg?.LargeImageUrl ?? anime.Images?.Webp?.LargeImageUrl),
+        PosterUrl = ToCdnUrl(
+            anime.Images?.Webp?.LargeImageUrl
+            ?? anime.Images?.Jpg?.LargeImageUrl
+            ?? anime.Images?.Webp?.ImageUrl
+            ?? anime.Images?.Jpg?.ImageUrl
+        ),
+        BackdropUrl = ToCdnUrl(
+            anime.Images?.Webp?.LargeImageUrl
+            ?? anime.Images?.Jpg?.LargeImageUrl
+            ?? anime.Images?.Webp?.ImageUrl
+            ?? anime.Images?.Jpg?.ImageUrl
+        ),
         Rating = anime.Score is > 0 ? (decimal)anime.Score.Value : null,
         Synopsis = anime.Synopsis,
         GenresCsv = anime.Genres != null ? string.Join(",", anime.Genres.Select(g => g.Name).Where(g => !string.IsNullOrEmpty(g))) : null
@@ -828,8 +865,18 @@ public class ContentApiService : IContentApiService
         Title = anime.Title ?? "",
         Year = anime.Year,
         Episodes = anime.Episodes,
-        PosterUrl = ToCdnUrl(anime.Images?.Jpg?.LargeImageUrl),
-        BackdropUrl = ToCdnUrl(anime.Images?.Jpg?.LargeImageUrl),
+        PosterUrl = ToCdnUrl(
+            anime.Images?.Webp?.LargeImageUrl
+            ?? anime.Images?.Jpg?.LargeImageUrl
+            ?? anime.Images?.Webp?.ImageUrl
+            ?? anime.Images?.Jpg?.ImageUrl
+        ),
+        BackdropUrl = ToCdnUrl(
+            anime.Images?.Webp?.LargeImageUrl
+            ?? anime.Images?.Jpg?.LargeImageUrl
+            ?? anime.Images?.Webp?.ImageUrl
+            ?? anime.Images?.Jpg?.ImageUrl
+        ),
         Rating = anime.Score is > 0 ? (decimal)anime.Score.Value : null,
         Synopsis = anime.Synopsis,
         GenresCsv = anime.Genres != null ? string.Join(",", anime.Genres.Select(g => g.Name).Where(g => !string.IsNullOrEmpty(g))) : null

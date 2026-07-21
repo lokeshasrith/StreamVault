@@ -46,6 +46,7 @@ export default function DiscoverPage() {
   const [popularMovies, setPopularMovies] = useState<ContentItem[]>([]);
   const [popularTVShows, setPopularTVShows] = useState<ContentItem[]>([]);
   const [popularAnime, setPopularAnime] = useState<ContentItem[]>([]);
+  const [upcomingAnime, setUpcomingAnime] = useState<ContentItem[]>([]);
   const [topRankedAnime, setTopRankedAnime] = useState<ContentItem[]>([]);
   const [topRatedContent, setTopRatedContent] = useState<ContentItem[]>([]);
   const [genres, setGenres] = useState<string[]>([]);
@@ -120,9 +121,10 @@ export default function DiscoverPage() {
         setLoadingStates(prev => ({ ...prev, popular: false }));
 
         // Batch 2: Top rated + anime + genres
-        const [topRatedRes, topAnimeRes, movieGenresRes, tvGenresRes, animeGenresRes] = await Promise.allSettled([
+        const [topRatedRes, topAnimeRes, upcomingAnimeRes, movieGenresRes, tvGenresRes, animeGenresRes] = await Promise.allSettled([
           discoverApi.getTopRated('all'),
           discoverApi.getTopRankedAnime(1, 20),
+          discoverApi.getUpcomingAnime(1),
           discoverApi.getGenres('movie'),
           discoverApi.getGenres('tv'),
           discoverApi.getGenres('anime'),
@@ -134,6 +136,7 @@ export default function DiscoverPage() {
         setLoadingStates(prev => ({ ...prev, topRated: false }));
 
         if (topAnimeRes.status === 'fulfilled') setTopRankedAnime(topAnimeRes.value);
+        if (upcomingAnimeRes.status === 'fulfilled') setUpcomingAnime(upcomingAnimeRes.value);
         setLoadingStates(prev => ({ ...prev, topRankedAnime: false }));
 
         const movieGenres = movieGenresRes.status === 'fulfilled' ? movieGenresRes.value : [];
@@ -220,7 +223,19 @@ export default function DiscoverPage() {
           };
           const results = await discoverApi.search(params);
           if (!controller.signal.aborted) {
-            setSearchResults(results);
+            const animeIntent = /\banime|manga|otaku|shounen|shonen|isekai|mecha|waifu|senpai\b/i.test(searchQuery);
+            const ranked = [...results].sort((a, b) => {
+              const aPoster = a.posterPath ? 1 : 0;
+              const bPoster = b.posterPath ? 1 : 0;
+              const aAnimeBoost = animeIntent && a.type === 'anime' ? 2 : 0;
+              const bAnimeBoost = animeIntent && b.type === 'anime' ? 2 : 0;
+              const aScore = aAnimeBoost + aPoster + (a.voteAverage > 0 ? 1 : 0);
+              const bScore = bAnimeBoost + bPoster + (b.voteAverage > 0 ? 1 : 0);
+              if (bScore !== aScore) return bScore - aScore;
+              return (b.voteAverage || 0) - (a.voteAverage || 0);
+            });
+
+            setSearchResults(ranked);
             setPersonResults([]);
           }
         }
@@ -366,6 +381,11 @@ export default function DiscoverPage() {
       contents: popularAnime,
       isLoading: loadingStates.popular
     },
+    {
+      title: "Upcoming Anime Releases",
+      contents: upcomingAnime,
+      isLoading: loadingStates.topRankedAnime
+    },
     ...(topRankedAnime.length > 0 ? [{
       title: "Top Ranked Anime (AnimeDB)",
       contents: topRankedAnime,
@@ -421,7 +441,7 @@ export default function DiscoverPage() {
       contents: topRatedContent,
       isLoading: loadingStates.topRated
     },
-  ], [likedRecommendedContent, trendingContent, recommendedContent, trendingIndia, hindiContent, teluguContent, tamilContent, malayalamContent, kannadaContent, popularMovies, popularTVShows, popularAnime, topRatedContent, topRankedAnime, loadingStates]);
+  ], [likedRecommendedContent, trendingContent, recommendedContent, trendingIndia, hindiContent, teluguContent, tamilContent, malayalamContent, kannadaContent, popularMovies, popularTVShows, popularAnime, upcomingAnime, topRatedContent, topRankedAnime, loadingStates]);
 
   const priorityCarouselSections = useMemo(
     () => carouselSections.filter((section) => (
@@ -429,6 +449,7 @@ export default function DiscoverPage() {
       || section.title === 'Popular TV Shows'
       || section.title === 'Trending Now'
       || section.title === 'Popular Anime'
+      || section.title === 'Upcoming Anime Releases'
       || section.title === 'Top Ranked Anime (AnimeDB)'
     )),
     [carouselSections],
