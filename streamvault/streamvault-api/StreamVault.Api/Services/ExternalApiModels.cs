@@ -215,7 +215,30 @@ public class JikanAnime
     public string? Duration { get; set; }
     public string? Rating { get; set; }
     public string? Source { get; set; }
+    public string? Season { get; set; }
     public JikanTrailer? Trailer { get; set; }
+    public JikanBroadcast? Broadcast { get; set; }
+    public List<JikanNamedEntity>? Themes { get; set; }
+    public List<JikanNamedEntity>? Demographics { get; set; }
+    public List<JikanNamedEntity>? Licensors { get; set; }
+    public List<JikanNamedEntity>? Producers { get; set; }
+}
+
+public class JikanBroadcast
+{
+    public string? Day { get; set; }
+    public string? Time { get; set; }
+    public string? Timezone { get; set; }
+    public string? String { get; set; }
+}
+
+public class JikanNamedEntity
+{
+    [JsonPropertyName("mal_id")]
+    public int MalId { get; set; }
+    public string Name { get; set; } = "";
+    public string? Type { get; set; }
+    public string? Url { get; set; }
 }
 
 public class JikanTrailer
@@ -710,3 +733,51 @@ public class JikanRecommendationItem
     public string? Url { get; set; }
     public JikanImages? Images { get; set; }
 }
+
+public class JikanNewsResponse
+{
+    public List<JikanNewsItem>? Data { get; set; }
+}
+
+public class JikanNewsItem
+{
+    public string? Title { get; set; }
+    public string? Url { get; set; }
+    public string? Excerpt { get; set; }
+    public string? Date { get; set; }
+    public JikanUserRef? Author { get; set; }
+}
+
+public class JikanUserRef
+{
+    public string? Username { get; set; }
+}
+
+public class JikanReviewsResponse
+{
+    public List<JikanReviewItem>? Data { get; set; }
+}
+
+public class JikanReviewItem
+{
+    public JikanReviewUser? User { get; set; }
+    public string? Review { get; set; }
+    public int? Score { get; set; }
+    public string? Date { get; set; }
+    [JsonPropertyName("is_spoiler")]
+    public bool IsSpoiler { get; set; }
+    [JsonPropertyName("is_preliminary")]
+    public bool IsPreliminary { get; set; }
+    public JikanReactionSummary? Reactions { get; set; }
+}
+
+public class JikanReviewUser
+{
+    public string? Username { get; set; }
+    public JikanImages? Images { get; set; }
+}
+
+public class JikanReactionSummary
+{
+    public int Overall { get; set; }
+  }

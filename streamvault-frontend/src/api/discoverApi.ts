@@ -45,8 +45,25 @@ export interface ContentDetails extends ContentItem {
   duration?: string;
   rating?: string;
   studios?: string[];
+  producers?: string[];
+  licensors?: string[];
+  themes?: string[];
+  demographics?: string[];
+  sourceMaterial?: string;
+  season?: string;
+  broadcast?: string;
   imdbId?: string;
   malRanking?: number;
+}
+
+export interface AnimeReviewItem {
+  author: string;
+  review: string;
+  score: number;
+  publishedAt?: string;
+  isSpoiler: boolean;
+  isPreliminary: boolean;
+  reactions: number;
 }
 
 export interface ExternalRatings {
@@ -246,10 +263,12 @@ function buildProxyImageUrl(url: string): string {
 }
 
 function shouldBypassProxy(url: string): boolean {
-  // Route all remote images through backend proxy for consistent loading
-  // in embedded browsers and restricted network environments.
-  void url;
-  return false;
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    return hostname === 'cdn.myanimelist.net' || hostname === 'myanimelist.net';
+  } catch {
+    return false;
+  }
 }
 
 export const PLACEHOLDER_POSTER = `data:image/svg+xml,${encodeURIComponent(
@@ -776,6 +795,22 @@ class DiscoverAPI {
   async getUpcomingAnime(page: number = 1): Promise<ContentItem[]> {
     const params = new URLSearchParams({ page: page.toString() });
     const resp = await get<{ items: ContentItem[] }>(`/api/discover/anime/upcoming?${params}`);
+    return resp.items ?? [];
+  }
+
+  async getNowAiringAnime(page: number = 1): Promise<ContentItem[]> {
+    const params = new URLSearchParams({ page: page.toString() });
+    const resp = await get<{ items: ContentItem[] }>(`/api/discover/anime/now-airing?${params}`);
+    return resp.items ?? [];
+  }
+
+  async getAnimeNews(id: string): Promise<NewsItem[]> {
+    const resp = await get<{ items: NewsItem[] }>(`/api/discover/anime/${id}/news`);
+    return resp.items ?? [];
+  }
+
+  async getAnimeReviews(id: string, page: number = 1): Promise<AnimeReviewItem[]> {
+    const resp = await get<{ items: AnimeReviewItem[] }>(`/api/discover/anime/${id}/reviews?page=${page}`);
     return resp.items ?? [];
   }
 

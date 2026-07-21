@@ -794,6 +794,71 @@ public sealed class DiscoverController : ControllerBase
         }
     }
 
+    [HttpGet("anime/now-airing")]
+    public async Task<IActionResult> GetNowAiringAnime([FromQuery] int page = 1)
+    {
+        try
+        {
+            var results = await _contentApiService.GetNowAiringAnimeAsync(page);
+            return Ok(WrapItems(results));
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { error = "Failed to fetch now airing anime" });
+        }
+    }
+
+    [HttpGet("anime/{id}/news")]
+    public async Task<IActionResult> GetAnimeNews(string id)
+    {
+        try
+        {
+            var items = await _contentApiService.GetAnimeNewsAsync(id);
+            return Ok(new
+            {
+                items = items.Select(item => new
+                {
+                    title = item.Title ?? "",
+                    url = item.Url ?? "",
+                    snippet = item.Excerpt ?? "",
+                    source = item.Author?.Username ?? "MyAnimeList",
+                    category = "Anime",
+                    publishedAt = item.Date
+                })
+            });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { error = "Failed to fetch anime news" });
+        }
+    }
+
+    [HttpGet("anime/{id}/reviews")]
+    public async Task<IActionResult> GetAnimeReviews(string id, [FromQuery] int page = 1)
+    {
+        try
+        {
+            var items = await _contentApiService.GetAnimeReviewsAsync(id, page);
+            return Ok(new
+            {
+                items = items.Select(item => new
+                {
+                    author = item.User?.Username ?? "Anonymous",
+                    review = item.Review ?? "",
+                    score = item.Score ?? 0,
+                    publishedAt = item.Date,
+                    isSpoiler = item.IsSpoiler,
+                    isPreliminary = item.IsPreliminary,
+                    reactions = item.Reactions?.Overall ?? 0
+                })
+            });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { error = "Failed to fetch anime reviews" });
+        }
+    }
+
     [HttpGet("browse")]
     public async Task<IActionResult> BrowseByGenre([FromQuery] string genre, [FromQuery] string? type, [FromQuery] int page = 1)
     {
@@ -1260,6 +1325,13 @@ public sealed class DiscoverController : ControllerBase
                     duration = anime.Duration,
                     rating = anime.Rating,
                     studios = anime.Studios?.Select(s => s.Name).ToArray(),
+                    producers = anime.Producers?.Select(s => s.Name).ToArray() ?? Array.Empty<string>(),
+                    licensors = anime.Licensors?.Select(s => s.Name).ToArray() ?? Array.Empty<string>(),
+                    themes = anime.Themes?.Select(s => s.Name).ToArray() ?? Array.Empty<string>(),
+                    demographics = anime.Demographics?.Select(s => s.Name).ToArray() ?? Array.Empty<string>(),
+                    sourceMaterial = anime.Source,
+                    season = anime.Season,
+                    broadcast = anime.Broadcast?.String,
                     malRanking = animeDbRanking,
                     trailerUrl,
                     cast = animeCast

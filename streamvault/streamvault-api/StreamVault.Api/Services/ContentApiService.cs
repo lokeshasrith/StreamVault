@@ -15,6 +15,7 @@ public interface IContentApiService
     Task<List<Content>> GetTrendingMoviesAsync(int page = 1, string? region = null);
     Task<List<Content>> GetTrendingTvShowsAsync(int page = 1, string? region = null);
     Task<List<Content>> GetTrendingAnimeAsync(int page = 1);
+    Task<List<Content>> GetNowAiringAnimeAsync(int page = 1);
     Task<List<Content>> GetPopularMoviesAsync(int page = 1, string? region = null);
     Task<List<Content>> GetPopularTvShowsAsync(int page = 1, string? region = null);
     Task<List<Content>> GetPopularAnimeAsync(int page = 1);
@@ -32,6 +33,8 @@ public interface IContentApiService
     Task<JikanEpisodesResponse?> GetAnimeEpisodesAsync(string malId, int page = 1);
     Task<JikanEpisodeDetail?> GetAnimeEpisodeDetailAsync(string malId, int episode);
     Task<JikanCharactersResponse?> GetAnimeCharactersAsync(string malId);
+    Task<List<JikanNewsItem>> GetAnimeNewsAsync(string malId);
+    Task<List<JikanReviewItem>> GetAnimeReviewsAsync(string malId, int page = 1);
     Task<TmdbSeasonDetails?> FindAnimeTmdbSeasonAsync(string animeTitle, int seasonNumber);
     Task<(string? Poster, string? Backdrop)?> FindAnimeTmdbMatchAsync(string animeTitle);
     Task<(string tmdbId, string mediaType)?> FindByImdbIdAsync(string imdbId);
@@ -611,6 +614,23 @@ public class ContentApiService : IContentApiService
         }
     }
 
+    public async Task<List<Content>> GetNowAiringAnimeAsync(int page = 1)
+    {
+        try
+        {
+            var url = $"{_jikanBaseUrl}/seasons/now?page={page}&limit=20";
+            var response = await GetJikanCachedAsync(url);
+            var jikanResponse = JsonSerializer.Deserialize<JikanSearchResponse>(response, JsonOptions());
+
+            return jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting now airing anime: {ex.Message}");
+            return new List<Content>();
+        }
+    }
+
     public async Task<List<Content>> GetPopularMoviesAsync(int page = 1, string? region = null)
     {
         if (!HasTmdbApiKey)
@@ -879,7 +899,8 @@ public class ContentApiService : IContentApiService
         ),
         Rating = anime.Score is > 0 ? (decimal)anime.Score.Value : null,
         Synopsis = anime.Synopsis,
-        GenresCsv = anime.Genres != null ? string.Join(",", anime.Genres.Select(g => g.Name).Where(g => !string.IsNullOrEmpty(g))) : null
+        GenresCsv = anime.Genres != null ? string.Join(",", anime.Genres.Select(g => g.Name).Where(g => !string.IsNullOrEmpty(g))) : null,
+        ZonesCsv = anime.Themes != null ? string.Join(",", anime.Themes.Select(t => t.Name).Where(n => !string.IsNullOrEmpty(n))) : null
     };
 
     private static string GetTmdbGenreName(int genreId) => genreId switch
@@ -993,6 +1014,38 @@ public class ContentApiService : IContentApiService
         {
             Console.WriteLine($"Error getting anime characters: {ex.Message}");
             return null;
+        }
+    }
+
+    public async Task<List<JikanNewsItem>> GetAnimeNewsAsync(string malId)
+    {
+        try
+        {
+            var url = $"{_jikanBaseUrl}/anime/{malId}/news";
+            var response = await GetJikanCachedAsync(url);
+            var parsed = JsonSerializer.Deserialize<JikanNewsResponse>(response, JsonOptions());
+            return parsed?.Data ?? new List<JikanNewsItem>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting anime news: {ex.Message}");
+            return new List<JikanNewsItem>();
+        }
+    }
+
+    public async Task<List<JikanReviewItem>> GetAnimeReviewsAsync(string malId, int page = 1)
+    {
+        try
+        {
+            var url = $"{_jikanBaseUrl}/anime/{malId}/reviews?page={page}";
+            var response = await GetJikanCachedAsync(url);
+            var parsed = JsonSerializer.Deserialize<JikanReviewsResponse>(response, JsonOptions());
+            return parsed?.Data ?? new List<JikanReviewItem>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting anime reviews: {ex.Message}");
+            return new List<JikanReviewItem>();
         }
     }
 

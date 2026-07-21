@@ -20,9 +20,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Tv,
-  ExternalLink
+  ExternalLink,
+  Radio,
+  Building2,
+  BookOpenText,
+  CalendarRange,
+  MessageSquareText
 } from 'lucide-react';
-import { discoverApi, type ContentDetails, type ExternalRatings, type WatchProviders, type SimilarItem, type ContentType, getImageUrl } from '../api/discoverApi';
+import { discoverApi, type ContentDetails, type ExternalRatings, type WatchProviders, type SimilarItem, type ContentType, type NewsItem, type AnimeReviewItem, getImageUrl } from '../api/discoverApi';
 import { useAuth } from '../auth/AuthContext';
 import { upsertLibrary, type UpsertPayload } from '../api/libraryApi';
 import EpisodeList from '../components/EpisodeList';
@@ -112,6 +117,8 @@ export default function ContentDetailsPage() {
   const [watchProviders, setWatchProviders] = useState<WatchProviders | null>(null);
   const [similarContent, setSimilarContent] = useState<SimilarItem[]>([]);
   const [currentTrending, setCurrentTrending] = useState<SimilarItem[]>([]);
+  const [animeNews, setAnimeNews] = useState<NewsItem[]>([]);
+  const [animeReviews, setAnimeReviews] = useState<AnimeReviewItem[]>([]);
   const castScrollRef = useRef<HTMLDivElement>(null);
   const similarScrollRef = useRef<HTMLDivElement>(null);
   const trendingScrollRef = useRef<HTMLDivElement>(null);
@@ -253,6 +260,30 @@ export default function ContentDetailsPage() {
 
     fetchExtras();
   }, [content, type, id]);
+
+  useEffect(() => {
+    if (type !== 'anime' || !id) {
+      setAnimeNews([]);
+      setAnimeReviews([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchAnimeExtras = async () => {
+      const [newsResult, reviewsResult] = await Promise.allSettled([
+        discoverApi.getAnimeNews(id),
+        discoverApi.getAnimeReviews(id, 1),
+      ]);
+
+      if (cancelled) return;
+      setAnimeNews(newsResult.status === 'fulfilled' ? newsResult.value.slice(0, 6) : []);
+      setAnimeReviews(reviewsResult.status === 'fulfilled' ? reviewsResult.value.filter((review) => !review.isSpoiler).slice(0, 4) : []);
+    };
+
+    void fetchAnimeExtras();
+    return () => { cancelled = true; };
+  }, [type, id]);
 
   const STATUS_MAP: Record<string, UpsertPayload['status']> = {
     'Plan to Watch': 'watchlist',
@@ -733,6 +764,90 @@ export default function ContentDetailsPage() {
           </motion.section>
         )}
 
+        {type === 'anime' && (
+          <motion.section
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8">
+              Anime Metadata
+            </h2>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {content.season && (
+                <div className="glass-card p-3 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <CalendarRange className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />
+                    <h3 className="font-semibold text-white text-sm sm:text-base">Season</h3>
+                  </div>
+                  <p className="text-base sm:text-lg text-[#E5E5E5] capitalize">{content.season}</p>
+                </div>
+              )}
+
+              {content.broadcast && (
+                <div className="glass-card p-3 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <Radio className="w-5 h-5 sm:w-6 sm:h-6 text-fuchsia-400" />
+                    <h3 className="font-semibold text-white text-sm sm:text-base">Broadcast</h3>
+                  </div>
+                  <p className="text-sm sm:text-base text-[#E5E5E5]">{content.broadcast}</p>
+                </div>
+              )}
+
+              {content.sourceMaterial && (
+                <div className="glass-card p-3 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <BookOpenText className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
+                    <h3 className="font-semibold text-white text-sm sm:text-base">Source</h3>
+                  </div>
+                  <p className="text-sm sm:text-base text-[#E5E5E5]">{content.sourceMaterial}</p>
+                </div>
+              )}
+
+              {content.producers && content.producers.length > 0 && (
+                <div className="glass-card p-3 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" />
+                    <h3 className="font-semibold text-white text-sm sm:text-base">Producers</h3>
+                  </div>
+                  <p className="text-sm sm:text-base text-[#E5E5E5] line-clamp-3">{content.producers.join(', ')}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {content.themes && content.themes.length > 0 && (
+                <div className="glass-card p-4 sm:p-6">
+                  <h3 className="text-[#808080] text-xs sm:text-sm font-semibold uppercase mb-3">Themes</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {content.themes.map((item) => <span key={item} className="premium-chip bg-white/[0.03] text-[#E5E5E5]">{item}</span>)}
+                  </div>
+                </div>
+              )}
+
+              {((content.demographics && content.demographics.length > 0) || (content.licensors && content.licensors.length > 0)) && (
+                <div className="glass-card p-4 sm:p-6 space-y-4">
+                  {content.demographics && content.demographics.length > 0 && (
+                    <div>
+                      <h3 className="text-[#808080] text-xs sm:text-sm font-semibold uppercase mb-3">Demographics</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {content.demographics.map((item) => <span key={item} className="premium-chip bg-white/[0.03] text-[#E5E5E5]">{item}</span>)}
+                      </div>
+                    </div>
+                  )}
+                  {content.licensors && content.licensors.length > 0 && (
+                    <div>
+                      <h3 className="text-[#808080] text-xs sm:text-sm font-semibold uppercase mb-3">Licensors</h3>
+                      <p className="text-sm text-[#E5E5E5] leading-relaxed">{content.licensors.join(', ')}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </motion.section>
+        )}
+
         {/* Cast Section */}
         {((content.cast && content.cast.length > 0) || content.director || (content.writers && content.writers.length > 0)) ? (
           <motion.section
@@ -967,7 +1082,7 @@ export default function ContentDetailsPage() {
             transition={{ delay: 0.8 }}
           >
             <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8">
-              You Might Also Like
+              {type === 'anime' ? 'Anime Recommendations' : 'You Might Also Like'}
             </h2>
             <div className="relative group/similar">
               <button
@@ -1073,6 +1188,60 @@ export default function ContentDetailsPage() {
                   </button>
                 ))}
               </div>
+            </div>
+          </motion.section>
+        )}
+
+        {type === 'anime' && animeNews.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+          >
+            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8">
+              Anime News
+            </h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {animeNews.map((item) => (
+                <a
+                  key={item.url}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="glass-card p-4 sm:p-5 hover:border-white/15 transition-colors"
+                >
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-[#ffd48c] mb-2">Jikan News</p>
+                  <h3 className="text-white font-semibold text-sm sm:text-base line-clamp-2 mb-2">{item.title}</h3>
+                  <p className="text-[#98A2B3] text-xs sm:text-sm line-clamp-3">{item.snippet}</p>
+                </a>
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {type === 'anime' && animeReviews.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.95 }}
+          >
+            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8 flex items-center gap-3">
+              <MessageSquareText className="w-5 h-5 text-[#ffd48c]" />
+              Anime Reviews
+            </h2>
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {animeReviews.map((review, index) => (
+                <div key={`${review.author}-${index}`} className="glass-card p-4 sm:p-6">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <p className="text-white font-semibold text-sm sm:text-base">{review.author}</p>
+                      {review.publishedAt && <p className="text-[#808080] text-xs">{new Date(review.publishedAt).toLocaleDateString()}</p>}
+                    </div>
+                    {review.score > 0 && <span className="premium-chip bg-[#01b4e4]/15 text-[#dff8ff]">{review.score}/10</span>}
+                  </div>
+                  <p className="text-[#A8B2C1] text-sm leading-relaxed line-clamp-6">{review.review}</p>
+                </div>
+              ))}
             </div>
           </motion.section>
         )}

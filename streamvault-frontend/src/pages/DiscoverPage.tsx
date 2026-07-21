@@ -5,7 +5,7 @@ import { Search, Filter, ArrowLeft, Home, CheckCircle, Users, Globe2, Heart, Spa
 import HeroBanner from '../components/HeroBanner';
 import ContentCard from '../components/ContentCard';
 import NewsSection from '../components/NewsSection';
-import { MultiContentCarousel } from '../components/ContentCarousel';
+import ContentCarousel, { MultiContentCarousel } from '../components/ContentCarousel';
 import PersonProfileModal from '../components/PersonProfileModal';
 import { 
   discoverApi, 
@@ -46,8 +46,10 @@ export default function DiscoverPage() {
   const [popularMovies, setPopularMovies] = useState<ContentItem[]>([]);
   const [popularTVShows, setPopularTVShows] = useState<ContentItem[]>([]);
   const [popularAnime, setPopularAnime] = useState<ContentItem[]>([]);
+  const [nowAiringAnime, setNowAiringAnime] = useState<ContentItem[]>([]);
   const [upcomingAnime, setUpcomingAnime] = useState<ContentItem[]>([]);
   const [topRankedAnime, setTopRankedAnime] = useState<ContentItem[]>([]);
+  const [activeAnimeFeed, setActiveAnimeFeed] = useState<'now' | 'upcoming' | 'top' | 'popular'>('now');
   const [topRatedContent, setTopRatedContent] = useState<ContentItem[]>([]);
   const [genres, setGenres] = useState<string[]>([]);
   const [trendingIndia, setTrendingIndia] = useState<ContentItem[]>([]);
@@ -121,10 +123,11 @@ export default function DiscoverPage() {
         setLoadingStates(prev => ({ ...prev, popular: false }));
 
         // Batch 2: Top rated + anime + genres
-        const [topRatedRes, topAnimeRes, upcomingAnimeRes, movieGenresRes, tvGenresRes, animeGenresRes] = await Promise.allSettled([
+        const [topRatedRes, topAnimeRes, upcomingAnimeRes, nowAiringAnimeRes, movieGenresRes, tvGenresRes, animeGenresRes] = await Promise.allSettled([
           discoverApi.getTopRated('all'),
           discoverApi.getTopRankedAnime(1, 20),
           discoverApi.getUpcomingAnime(1),
+          discoverApi.getNowAiringAnime(1),
           discoverApi.getGenres('movie'),
           discoverApi.getGenres('tv'),
           discoverApi.getGenres('anime'),
@@ -137,6 +140,7 @@ export default function DiscoverPage() {
 
         if (topAnimeRes.status === 'fulfilled') setTopRankedAnime(topAnimeRes.value);
         if (upcomingAnimeRes.status === 'fulfilled') setUpcomingAnime(upcomingAnimeRes.value);
+        if (nowAiringAnimeRes.status === 'fulfilled') setNowAiringAnime(nowAiringAnimeRes.value);
         setLoadingStates(prev => ({ ...prev, topRankedAnime: false }));
 
         const movieGenres = movieGenresRes.status === 'fulfilled' ? movieGenresRes.value : [];
@@ -460,6 +464,13 @@ export default function DiscoverPage() {
     [carouselSections, priorityCarouselSections],
   );
 
+  const animeHubSections = useMemo(() => ({
+    now: nowAiringAnime,
+    upcoming: upcomingAnime,
+    top: topRankedAnime,
+    popular: popularAnime,
+  }), [nowAiringAnime, upcomingAnime, topRankedAnime, popularAnime]);
+
   return (
     <div className="discover-page page-shell min-h-screen bg-[#0F1014] pt-11 sm:pt-16 md:pt-20 pb-20 md:pb-8">
 
@@ -753,6 +764,49 @@ export default function DiscoverPage() {
           {/* Content Carousels */}
           {!searchQuery && !selectedGenre && (
             <>
+              <div className="max-w-6xl mx-auto premium-panel px-4 py-4 sm:px-6 sm:py-6 space-y-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <span className="premium-kicker">Jikan Powered</span>
+                    <h2 className="section-heading text-xl sm:text-4xl text-[#F7F1E8] mt-2">Anime Hub</h2>
+                    <p className="text-[#98A2B3] text-xs sm:text-sm mt-1">Now airing, upcoming, top ranked, and by popularity from Jikan.</p>
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                    {[
+                      { key: 'now', label: 'Now Airing' },
+                      { key: 'upcoming', label: 'Upcoming' },
+                      { key: 'top', label: 'Top' },
+                      { key: 'popular', label: 'By Popularity' },
+                    ].map((tab) => (
+                      <button
+                        key={tab.key}
+                        onClick={() => setActiveAnimeFeed(tab.key as 'now' | 'upcoming' | 'top' | 'popular')}
+                        className={`premium-chip whitespace-nowrap ${activeAnimeFeed === tab.key ? 'bg-[#ffc562] text-black' : 'bg-white/[0.03] text-[#A7B0BE]'}`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <ContentCarousel
+                  title={
+                    activeAnimeFeed === 'now'
+                      ? 'Now Airing Anime'
+                      : activeAnimeFeed === 'upcoming'
+                        ? 'Upcoming Anime Releases'
+                        : activeAnimeFeed === 'top'
+                          ? 'Top Ranked Anime'
+                          : 'Popular Anime'
+                  }
+                  contents={animeHubSections[activeAnimeFeed]}
+                  isLoading={loadingStates.popular || loadingStates.topRankedAnime}
+                  size="medium"
+                  onContentClick={handleContentClick}
+                  onAddToLibrary={handleAddToLibrary}
+                />
+              </div>
+
               <div>
                 <MultiContentCarousel
                   sections={priorityCarouselSections}
