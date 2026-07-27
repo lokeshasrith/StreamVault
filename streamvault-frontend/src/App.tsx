@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./auth/AuthContext";
 import AuthPage from "./pages/AuthPage";
 import AppShell from "./layout/AppShell";
 import DiscoverPage from "./pages/DiscoverPage";
+import AnimeExplorePage from "./pages/AnimeExplorePage";
 import LibraryPage from "./pages/LibraryPage";
 import ContentDetailsPage from "./pages/ContentDetailsPage";
 import ApiStatusPage from "./pages/ApiStatusPage";
@@ -51,7 +52,7 @@ function AppRoutes() {
         }
       >
         <Route index element={<DiscoverPage />} />
-        <Route path="anime" element={<DiscoverPage />} />
+        <Route path="anime" element={<AnimeExplorePage />} />
         <Route path="library/:status" element={<LibraryPage />} />
         <Route path="activity" element={<ActivityPage />} />
         <Route path="status" element={<ApiStatusPage />} />
