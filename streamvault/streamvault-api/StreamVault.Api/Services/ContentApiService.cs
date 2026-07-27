@@ -98,20 +98,20 @@ public class ContentApiService : IContentApiService
         ("Sherlock", 2010)
     };
 
-    private static readonly (string MalId, string Title, int? Year, decimal? Rating, string? GenresCsv)[] AnimeStaticFallback =
+    private static readonly (string MalId, string Title, int? Year, decimal? Rating, string? GenresCsv, string PosterUrl)[] AnimeStaticFallback =
     {
-        ("16498", "Attack on Titan", 2013, 9.0m, "Action,Drama"),
-        ("52991", "Frieren: Beyond Journey's End", 2023, 9.2m, "Adventure,Drama"),
-        ("5114", "Fullmetal Alchemist: Brotherhood", 2009, 9.1m, "Action,Fantasy"),
-        ("9253", "Steins;Gate", 2011, 9.0m, "Sci-Fi,Thriller"),
-        ("21", "One Piece", 1999, 8.7m, "Action,Adventure"),
-        ("11061", "Hunter x Hunter", 2011, 9.0m, "Action,Adventure"),
-        ("1535", "Death Note", 2006, 8.9m, "Mystery,Thriller"),
-        ("38000", "Demon Slayer: Kimetsu no Yaiba", 2019, 8.6m, "Action,Fantasy"),
-        ("40748", "Jujutsu Kaisen", 2020, 8.7m, "Action,Supernatural"),
-        ("20", "Naruto", 2002, 8.4m, "Action,Adventure"),
-        ("1735", "Naruto Shippuden", 2007, 8.6m, "Action,Adventure"),
-        ("30276", "One Punch Man", 2015, 8.7m, "Action,Comedy")
+        ("16498", "Attack on Titan", 2013, 9.0m, "Action,Drama", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx16498-buvcRTBx4NSm.jpg"),
+        ("52991", "Frieren: Beyond Journey's End", 2023, 9.2m, "Adventure,Drama", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx170068-ijY3tCP8KoWP.jpg"),
+        ("5114", "Fullmetal Alchemist: Brotherhood", 2009, 9.1m, "Action,Fantasy", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx5114-nSWCgQlmOMtj.jpg"),
+        ("9253", "Steins;Gate", 2011, 9.0m, "Sci-Fi,Thriller", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx9253-tIUXF2gfU8Sg.jpg"),
+        ("21", "One Piece", 1999, 8.7m, "Action,Adventure", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21-ELSYx3yMPcKM.jpg"),
+        ("11061", "Hunter x Hunter", 2011, 9.0m, "Action,Adventure", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx136-gj0bbCpDNrKG.jpg"),
+        ("1535", "Death Note", 2006, 8.9m, "Mystery,Thriller", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1535-kUgkcrfOrkUM.jpg"),
+        ("38000", "Demon Slayer: Kimetsu no Yaiba", 2019, 8.6m, "Action,Fantasy", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101922-WBsBl0ClmgYL.jpg"),
+        ("40748", "Jujutsu Kaisen", 2020, 8.7m, "Action,Supernatural", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113415-LHBAeoZDIsnF.jpg"),
+        ("20", "Naruto", 2002, 8.4m, "Action,Adventure", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20-dE6UHbFFg1A5.jpg"),
+        ("1735", "Naruto Shippuden", 2007, 8.6m, "Action,Adventure", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1735-kGfVm0YqCPcu.png"),
+        ("30276", "One Punch Man", 2015, 8.7m, "Action,Comedy", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21087-B5DHjqZ3kW4b.jpg")
     };
 
     private bool HasTmdbApiKey =>
@@ -500,8 +500,8 @@ query ($page: Int, $perPage: Int, $search: String, $status: MediaStatus, $sort: 
                 Type = ContentType.anime,
                 Title = a.Title,
                 Year = a.Year,
-                PosterUrl = $"https://img.anili.st/{a.MalId}",
-                BackdropUrl = $"https://img.anili.st/{a.MalId}",
+                PosterUrl = a.PosterUrl,
+                BackdropUrl = a.PosterUrl,
                 Rating = a.Rating,
                 Synopsis = "Curated fallback while upstream anime providers are unavailable.",
                 GenresCsv = a.GenresCsv
