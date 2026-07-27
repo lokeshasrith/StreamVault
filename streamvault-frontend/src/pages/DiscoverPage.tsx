@@ -649,7 +649,7 @@ export default function DiscoverPage() {
                 {/* Content Type Filter */}
                 <div className="max-w-5xl mx-auto">
                   <div className="premium-panel p-3.5 sm:p-5 lg:p-6 space-y-3 sm:space-y-4 overflow-hidden">
-                    <div className="flex gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide flex-nowrap sm:flex-wrap justify-start sm:justify-center pb-1">
+                    <div className="scrollbar-soft flex gap-1.5 sm:gap-2 overflow-x-auto flex-nowrap sm:flex-wrap justify-start sm:justify-center pb-2">
                       {(['all', 'movie', 'tv', 'anime'] as ContentType[]).map((type) => (
                         <button
                           key={type}
@@ -690,7 +690,7 @@ export default function DiscoverPage() {
           {/* Search Results */}
           {searchQuery && (
             <div>
-              <div className="premium-panel mb-4 flex items-center gap-2 overflow-x-auto scrollbar-hide px-3 py-3 sm:gap-3 sm:px-5">
+              <div className="premium-panel scrollbar-soft mb-4 flex items-center gap-2 overflow-x-auto px-3 py-3 sm:gap-3 sm:px-5">
                 <button
                   onClick={() => setSearchMode('content')}
                   className={`premium-chip ${searchMode === 'content' ? 'bg-[#ffc562] text-black' : 'bg-white/[0.03] text-[#A7B0BE]'}`}
@@ -714,7 +714,7 @@ export default function DiscoverPage() {
               </div>
 
               {searchMode === 'content' && (
-                <div className="premium-panel mb-4 flex items-center gap-2 overflow-x-auto scrollbar-hide px-3 py-2.5 sm:px-5">
+                <div className="premium-panel scrollbar-soft mb-4 flex items-center gap-2 overflow-x-auto px-3 py-2.5 sm:px-5">
                   {(['all', 'movie', 'tv', 'anime'] as ContentType[]).map((type) => (
                     <button
                       key={`search-filter-${type}`}
@@ -912,7 +912,7 @@ export default function DiscoverPage() {
                       </button>
                     )}
                   </div>
-                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                  <div className="scrollbar-soft flex gap-2 overflow-x-auto pb-2">
                     {[
                       { key: 'now', label: 'Now Airing' },
                       { key: 'upcoming', label: 'Upcoming' },
@@ -933,7 +933,7 @@ export default function DiscoverPage() {
                 {animeViewMore ? (
                   <div className="space-y-5 sm:space-y-6">
                     <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
-                      <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide pb-1">
+                      <div className="scrollbar-soft flex flex-wrap gap-2 overflow-x-auto pb-2">
                         <button
                           onClick={() => setAnimeGenreFilter('all')}
                           className={`premium-chip whitespace-nowrap ${animeGenreFilter === 'all' ? 'bg-[#ffc562] text-black' : 'bg-white/[0.03] text-[#A7B0BE]'}`}

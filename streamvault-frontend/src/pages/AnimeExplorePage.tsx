@@ -210,7 +210,7 @@ export default function AnimeExplorePage() {
               </button>
             </div>
 
-            <div className="flex gap-2.5 sm:gap-3 overflow-x-auto scrollbar-hide pb-1">
+            <div className="scrollbar-soft flex gap-2.5 sm:gap-3 overflow-x-auto pb-2">
               {[
                 { key: 'now', label: 'Now Airing' },
                 { key: 'upcoming', label: 'Upcoming' },
@@ -229,7 +229,7 @@ export default function AnimeExplorePage() {
           </div>
 
           <div className="border-t border-white/10 pt-5 sm:pt-6">
-            <div className="flex flex-wrap gap-2.5 sm:gap-3 md:gap-3.5">
+            <div className="scrollbar-soft flex flex-wrap gap-2.5 sm:gap-3 md:gap-3.5 overflow-x-auto pb-2">
               <button
                 onClick={() => setActiveGenre('all')}
                 className={`premium-chip whitespace-nowrap ${activeGenre === 'all' ? 'bg-[#ffc562] text-black' : 'bg-white/[0.03] text-[#A7B0BE]'}`}

@@ -248,6 +248,35 @@
     background: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%);
   }
 
+  .scrollbar-soft {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 197, 98, 0.36) rgba(255, 255, 255, 0.04);
+  }
+
+  .scrollbar-soft::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-soft::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 999px;
+  }
+
+  .scrollbar-soft::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, rgba(255, 197, 98, 0.8), rgba(90, 211, 255, 0.55));
+    border-radius: 999px;
+  }
+
+  .mobile-bottom-nav {
+    box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.34);
+  }
+
+  .mobile-bottom-nav > div {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
   .nav-sheen::before {
     content: "";
     position: absolute;
@@ -346,6 +375,18 @@
       border-radius: 22px;
     }
 
+    .app-header-shell {
+      padding-top: 0.8rem;
+      padding-bottom: 0.8rem;
+    }
+
+    .app-header-action {
+      min-width: 44px;
+      min-height: 44px;
+      border-radius: 16px;
+      padding: 0.7rem;
+    }
+
     .rail-panel {
       border-radius: 22px;
     }
@@ -364,6 +405,10 @@
 
     .premium-kicker::before {
       width: 1.8rem;
+    }
+
+    .scrollbar-soft::-webkit-scrollbar {
+      height: 4px;
     }
   }
 

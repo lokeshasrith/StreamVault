@@ -280,7 +280,7 @@ export default function AppShell() {
               <StreamVaultLogo size={46} />
             </button>
 
-            <nav className="app-nav-deck flex min-w-0 items-center justify-center gap-1.5 rounded-[26px] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(13,16,22,0.82),rgba(8,11,17,0.78))] px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] overflow-x-auto scrollbar-hide">
+            <nav className="app-nav-deck scrollbar-soft flex min-w-0 items-center justify-center gap-1.5 rounded-[26px] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(13,16,22,0.82),rgba(8,11,17,0.78))] px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] overflow-x-auto">
               {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
                 <NavLink
                   key={`${activeUserKey}-desktop-${to}`}
