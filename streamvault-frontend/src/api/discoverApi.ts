@@ -258,6 +258,28 @@ export interface SimilarItem {
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
+const PROXY_ALLOWED_HOSTS = [
+  'image.tmdb.org',
+  'media-amazon.com',
+  'm.media-amazon.com',
+  'imdb.com',
+  'media-imdb.com',
+  'ia.media-imdb.com',
+  'wikimedia.org',
+  'upload.wikimedia.org',
+  'myanimelist.net',
+  'cdn.myanimelist.net',
+  'cdn.jikan.moe',
+  'img.youtube.com',
+  'deadline.com',
+  'variety.com',
+  'hollywoodreporter.com',
+  'animenewsnetwork.com',
+  'hindustantimes.com',
+  'bollywoodhungama.com',
+  'indianexpress.com',
+];
+
 function buildProxyImageUrl(url: string): string {
   return `${API_BASE}/api/img/proxy?url=${encodeURIComponent(url)}`;
 }
@@ -271,6 +293,28 @@ function shouldBypassProxy(url: string): boolean {
   }
 }
 
+function isProxyAllowedHost(hostname: string): boolean {
+  return PROXY_ALLOWED_HOSTS.some((allowed) => hostname === allowed || hostname.endsWith(`.${allowed}`));
+}
+
+function normalizeRemoteUrl(input: string): string {
+  let url = input.trim();
+  if (url.startsWith('//')) {
+    url = `https:${url}`;
+  }
+
+  try {
+    const parsed = new URL(url);
+    // Force HTTPS to avoid mixed-content failures on mobile webviews.
+    if (parsed.protocol === 'http:') {
+      parsed.protocol = 'https:';
+    }
+    return parsed.toString();
+  } catch {
+    return input;
+  }
+}
+
 export const PLACEHOLDER_POSTER = `data:image/svg+xml,${encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" width="342" height="513" viewBox="0 0 342 513">
     <rect width="342" height="513" fill="#1a1a2e"/>
@@ -281,19 +325,36 @@ export const PLACEHOLDER_POSTER = `data:image/svg+xml,${encodeURIComponent(
 
 export function getImageUrl(path: string | undefined, size: 'small' | 'medium' | 'large' | 'original' = 'medium'): string {
   if (!path) return PLACEHOLDER_POSTER;
-  if (path.startsWith('data:')) return path;
-  if (path.startsWith('/api/')) return path;
+  const normalizedPath = path.trim();
+  if (!normalizedPath) return PLACEHOLDER_POSTER;
+  if (normalizedPath.startsWith('data:')) return normalizedPath;
+  if (normalizedPath.startsWith('/api/')) return normalizedPath;
 
-  // Route remote images through the backend so embedded browsers do not block them.
-  if (path.startsWith('http')) {
-    if (shouldBypassProxy(path)) {
-      return path;
+  const isAbsolute = /^https?:\/\//i.test(normalizedPath) || normalizedPath.startsWith('//');
+  if (isAbsolute) {
+    const remoteUrl = normalizeRemoteUrl(normalizedPath);
+    try {
+      const hostname = new URL(remoteUrl).hostname.toLowerCase();
+      if (shouldBypassProxy(remoteUrl)) {
+        return remoteUrl;
+      }
+      if (isProxyAllowedHost(hostname)) {
+        return buildProxyImageUrl(remoteUrl);
+      }
+      // If backend proxy does not allow this host, use direct HTTPS URL as fallback.
+      return remoteUrl;
+    } catch {
+      return remoteUrl;
     }
-    return buildProxyImageUrl(path);
+  }
+
+  // Normalize malformed host-style URLs like cdn.example.com/image.jpg.
+  if (/^[a-z0-9.-]+\.[a-z]{2,}\//i.test(normalizedPath)) {
+    return getImageUrl(`https://${normalizedPath}`, size);
   }
 
   const sizeMap = { small: 'w185', medium: 'w342', large: 'w780', original: 'original' };
-  return buildProxyImageUrl(`${TMDB_IMAGE_BASE}/${sizeMap[size]}${path}`);
+  return buildProxyImageUrl(`${TMDB_IMAGE_BASE}/${sizeMap[size]}${normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`}`);
 }
 
 export function formatRating(rating: number | undefined): string {
@@ -787,21 +848,36 @@ class DiscoverAPI {
   async getTopRankedAnime(page: number = 1, size: number = 20, genres?: string): Promise<ContentItem[]> {
     const params = new URLSearchParams({ page: page.toString(), size: size.toString() });
     if (genres) params.append('genres', genres);
-    const resp = await get<{ items: ContentItem[] }>(`/api/discover/anime/top-ranked?${params}`);
-    return resp.items ?? [];
+    try {
+      const resp = await get<{ items: ContentItem[] }>(`/api/discover/anime/top-ranked?${params}`);
+      if ((resp.items?.length ?? 0) > 0) return resp.items;
+    } catch {
+      // Fall through to resilient fallback.
+    }
+    return this.getPopular('anime', page);
   }
 
   // Get upcoming anime releases (future/next-season titles)
   async getUpcomingAnime(page: number = 1): Promise<ContentItem[]> {
     const params = new URLSearchParams({ page: page.toString() });
-    const resp = await get<{ items: ContentItem[] }>(`/api/discover/anime/upcoming?${params}`);
-    return resp.items ?? [];
+    try {
+      const resp = await get<{ items: ContentItem[] }>(`/api/discover/anime/upcoming?${params}`);
+      if ((resp.items?.length ?? 0) > 0) return resp.items;
+    } catch {
+      // Fall through to resilient fallback.
+    }
+    return this.getPopular('anime', page);
   }
 
   async getNowAiringAnime(page: number = 1): Promise<ContentItem[]> {
     const params = new URLSearchParams({ page: page.toString() });
-    const resp = await get<{ items: ContentItem[] }>(`/api/discover/anime/now-airing?${params}`);
-    return resp.items ?? [];
+    try {
+      const resp = await get<{ items: ContentItem[] }>(`/api/discover/anime/now-airing?${params}`);
+      if ((resp.items?.length ?? 0) > 0) return resp.items;
+    } catch {
+      // Fall through to resilient fallback.
+    }
+    return this.getPopular('anime', page);
   }
 
   async getAnimeNews(id: string): Promise<NewsItem[]> {

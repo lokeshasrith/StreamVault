@@ -87,10 +87,12 @@ describe('discoverApi utility helpers', () => {
     const proxiedAmazon = getImageUrl('https://m.media-amazon.com/images/M/demo.jpg');
     const proxiedTmdb = getImageUrl('https://image.tmdb.org/t/p/w500/abc.jpg');
     const proxied = getImageUrl('https://example.org/poster.jpg');
+    const normalizedProtocolRelative = getImageUrl('//cdn.myanimelist.net/images/anime/demo.jpg');
 
     expect(proxiedAmazon).toContain('/api/img/proxy?url=');
     expect(proxiedTmdb).toContain('/api/img/proxy?url=');
-    expect(proxied).toContain('/api/img/proxy?url=');
+    expect(proxied).toBe('https://example.org/poster.jpg');
+    expect(normalizedProtocolRelative).toBe('https://cdn.myanimelist.net/images/anime/demo.jpg');
   });
 
   it('formats helper labels correctly', () => {
