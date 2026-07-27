@@ -192,10 +192,10 @@ export default function AnimeExplorePage() {
   }, [navigate, token]);
 
   return (
-    <div className="anime-explorer-page page-shell min-h-screen bg-[#0F1014] pt-12 sm:pt-16 md:pt-20 pb-20 md:pb-10">
-      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 py-5 sm:py-9">
-        <section className="premium-panel px-4 py-5 sm:px-7 sm:py-7 lg:px-8 lg:py-8 space-y-5 sm:space-y-7">
-          <div className="flex flex-col gap-4 sm:gap-5 xl:flex-row xl:items-end xl:justify-between">
+    <div className="anime-explorer-page page-shell min-h-screen bg-[#0F1014] pt-12 sm:pt-16 md:pt-20 pb-24 md:pb-12">
+      <div className="mx-auto max-w-[1640px] px-4 sm:px-6 lg:px-10 py-6 sm:py-10 lg:py-12">
+        <section className="premium-panel px-4 py-6 sm:px-7 sm:py-8 lg:px-10 lg:py-10 space-y-6 sm:space-y-8 lg:space-y-10">
+          <div className="flex flex-col gap-5 sm:gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <span className="premium-kicker">Anime Explorer</span>
               <h1 className="section-heading mt-2 text-2xl sm:text-4xl text-[#F7F1E8]">Discover Anime Deeply</h1>
@@ -204,13 +204,13 @@ export default function AnimeExplorePage() {
               </p>
               <button
                 onClick={() => navigate(appRoot)}
-                className="mt-4 premium-chip bg-white/[0.03] text-[#A7B0BE] hover:text-[#F7F1E8]"
+                className="mt-5 premium-chip bg-white/[0.03] text-[#A7B0BE] hover:text-[#F7F1E8]"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Back to Discover
               </button>
             </div>
 
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            <div className="flex gap-2.5 sm:gap-3 overflow-x-auto scrollbar-hide pb-1">
               {[
                 { key: 'now', label: 'Now Airing' },
                 { key: 'upcoming', label: 'Upcoming' },
@@ -228,8 +228,8 @@ export default function AnimeExplorePage() {
             </div>
           </div>
 
-          <div className="border-t border-white/10 pt-4 sm:pt-5">
-            <div className="flex flex-wrap gap-2.5">
+          <div className="border-t border-white/10 pt-5 sm:pt-6">
+            <div className="flex flex-wrap gap-2.5 sm:gap-3 md:gap-3.5">
               <button
                 onClick={() => setActiveGenre('all')}
                 className={`premium-chip whitespace-nowrap ${activeGenre === 'all' ? 'bg-[#ffc562] text-black' : 'bg-white/[0.03] text-[#A7B0BE]'}`}
@@ -260,7 +260,8 @@ export default function AnimeExplorePage() {
               )}
 
               {filteredItems.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
+                <div className="pt-1 sm:pt-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3.5 gap-y-4.5 sm:gap-x-4.5 sm:gap-y-5.5 lg:gap-x-5.5 lg:gap-y-6">
                   {filteredItems.map((content) => (
                     <ContentCard
                       key={`anime-explorer-${content.source}-${content.externalId}`}
@@ -271,6 +272,7 @@ export default function AnimeExplorePage() {
                     />
                   ))}
                 </div>
+                </div>
               ) : (
                 <div className="text-center py-16 text-[#98A2B3]">
                   <Sparkles className="mx-auto mb-3 h-7 w-7 text-[#ffc562]" />
@@ -279,7 +281,7 @@ export default function AnimeExplorePage() {
               )}
 
               {hasMore && (
-                <div className="text-center pt-4 sm:pt-6">
+                <div className="text-center pt-5 sm:pt-8">
                   <button
                     onClick={() => void loadMore()}
                     disabled={loadingMore}
