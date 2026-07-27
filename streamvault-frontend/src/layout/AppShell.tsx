@@ -4,6 +4,7 @@ import { Search, LogOut, Compass, Bookmark, Eye, CheckCircle, XCircle, PauseCirc
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "../auth/AuthContext";
 import { discoverApi, type ContentItem, getImageUrl, formatRating, getContentTypeLabel, formatYear, PLACEHOLDER_POSTER } from "../api/discoverApi";
+import StreamVaultLogo from "../components/StreamVaultLogo";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -274,14 +275,7 @@ export default function AppShell() {
               onClick={() => { setQuery(""); nav(withUserRoot("/")); }}
               className="flex items-center gap-2 sm:gap-3 flex-shrink-0 cursor-pointer group"
             >
-              <div className="relative flex h-9 w-9 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,#ffebbb_0%,#ffc562_52%,#ff8458_100%)] shadow-[0_16px_34px_rgba(255,149,87,0.25)] sm:h-10 sm:w-10">
-                <span className="text-[#0b0d12] font-black text-[10px] sm:text-xs tracking-[0.14em]">SV</span>
-                <span className="absolute inset-0 rounded-2xl border border-white/25" />
-              </div>
-              <div className="hidden sm:block text-left">
-                <span className="block font-display text-sm font-bold tracking-[0.28em] text-[#FFD48C] uppercase">StreamVault</span>
-                <span className="block text-[10px] text-white/36 tracking-[0.24em] uppercase">Cinema Index</span>
-              </div>
+              <StreamVaultLogo size={40} className="sm:[&>div:last-child]:block [&>div:last-child]:hidden" />
             </button>
 
             {/* Desktop Navigation — hidden on mobile */}

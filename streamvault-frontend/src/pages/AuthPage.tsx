@@ -3,6 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, User, LogIn, UserPlus, Loader2, Film, Tv, Sparkles } from "lucide-react";
+import StreamVaultLogo from "../components/StreamVaultLogo";
 
 export default function AuthPage() {
   const { register, login } = useAuth();
@@ -58,16 +59,8 @@ export default function AuthPage() {
       <div className="auth-shell relative z-10 mx-auto w-full max-w-[440px]">
         {/* Branding */}
         <div className="auth-branding text-center mb-3">
-          <div className="inline-flex items-center gap-2.5 mb-2">
-            <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{
-              background: 'linear-gradient(135deg, #ffe2a7 0%, #ffc562 54%, #ff9457 100%)',
-              boxShadow: '0 6px 18px rgba(255, 155, 82, 0.3)'
-            }}>
-              <span className="text-[#07090d] font-bold text-xs tracking-wide">SV</span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[#f4efe6] tracking-tight" style={{ fontFamily: "'Space Grotesk', 'Poppins', system-ui, sans-serif" }}>
-              StreamVault
-            </h1>
+          <div className="mb-2 flex justify-center">
+            <StreamVaultLogo size={38} />
           </div>
 
           {/* Premium kicker */}
