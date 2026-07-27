@@ -50,6 +50,14 @@ export default function DiscoverPage() {
   const [upcomingAnime, setUpcomingAnime] = useState<ContentItem[]>([]);
   const [topRankedAnime, setTopRankedAnime] = useState<ContentItem[]>([]);
   const [activeAnimeFeed, setActiveAnimeFeed] = useState<'now' | 'upcoming' | 'top' | 'popular'>('now');
+  const [animeViewMore, setAnimeViewMore] = useState(false);
+  const [animeViewItems, setAnimeViewItems] = useState<ContentItem[]>([]);
+  const [animeViewPage, setAnimeViewPage] = useState(1);
+  const [animeViewHasMore, setAnimeViewHasMore] = useState(true);
+  const [animeViewLoading, setAnimeViewLoading] = useState(false);
+  const [animeViewLoadingMore, setAnimeViewLoadingMore] = useState(false);
+  const [animeGenreFilter, setAnimeGenreFilter] = useState<string>('all');
+  const [animeGenres, setAnimeGenres] = useState<string[]>([]);
   const [topRatedContent, setTopRatedContent] = useState<ContentItem[]>([]);
   const [genres, setGenres] = useState<string[]>([]);
   const [trendingIndia, setTrendingIndia] = useState<ContentItem[]>([]);
@@ -147,6 +155,7 @@ export default function DiscoverPage() {
         const tvGenres = tvGenresRes.status === 'fulfilled' ? tvGenresRes.value : [];
         const animeGenres = animeGenresRes.status === 'fulfilled' ? animeGenresRes.value : [];
         const allGenres = [...new Set([...movieGenres, ...tvGenres, ...animeGenres])].sort();
+        setAnimeGenres(animeGenres);
         setGenres(allGenres);
         setLoadingStates(prev => ({ ...prev, genres: false }));
 
@@ -478,6 +487,86 @@ export default function DiscoverPage() {
     };
   }, [nowAiringAnime, upcomingAnime, topRankedAnime, popularAnime, topRatedContent, trendingContent]);
 
+  const fetchAnimeFeedPage = useCallback(async (feed: 'now' | 'upcoming' | 'top' | 'popular', page: number): Promise<ContentItem[]> => {
+    switch (feed) {
+      case 'now':
+        return discoverApi.getNowAiringAnime(page);
+      case 'upcoming':
+        return discoverApi.getUpcomingAnime(page);
+      case 'top':
+        return discoverApi.getTopRankedAnime(page, 20);
+      case 'popular':
+      default:
+        return discoverApi.getPopular('anime', page);
+    }
+  }, []);
+
+  const mergeUniqueAnime = useCallback((items: ContentItem[]) => {
+    return items.filter((item, index, all) => (
+      all.findIndex((candidate) => `${candidate.source}:${candidate.externalId}` === `${item.source}:${item.externalId}`) === index
+    ));
+  }, []);
+
+  useEffect(() => {
+    if (!animeViewMore || searchQuery || selectedGenre) return;
+
+    let cancelled = false;
+
+    const hydrateAnimeView = async () => {
+      setAnimeViewLoading(true);
+      setAnimeViewPage(1);
+      setAnimeViewHasMore(true);
+      try {
+        let items: ContentItem[] = [];
+        if (animeGenreFilter !== 'all') {
+          items = await discoverApi.browseByGenre(animeGenreFilter, 'anime', 1);
+        } else {
+          items = await fetchAnimeFeedPage(activeAnimeFeed, 1);
+        }
+
+        if (!cancelled) {
+          const merged = mergeUniqueAnime(items);
+          setAnimeViewItems(merged);
+          setAnimeViewHasMore(merged.length >= 20);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to load anime view more:', error);
+          setAnimeViewItems(animeHubSections[activeAnimeFeed] ?? []);
+          setAnimeViewHasMore(false);
+        }
+      } finally {
+        if (!cancelled) setAnimeViewLoading(false);
+      }
+    };
+
+    void hydrateAnimeView();
+    return () => { cancelled = true; };
+  }, [animeViewMore, animeGenreFilter, activeAnimeFeed, searchQuery, selectedGenre, animeHubSections, fetchAnimeFeedPage, mergeUniqueAnime]);
+
+  const loadMoreAnime = useCallback(async () => {
+    const nextPage = animeViewPage + 1;
+    setAnimeViewLoadingMore(true);
+    try {
+      const nextItems = animeGenreFilter !== 'all'
+        ? await discoverApi.browseByGenre(animeGenreFilter, 'anime', nextPage)
+        : await fetchAnimeFeedPage(activeAnimeFeed, nextPage);
+
+      if (nextItems.length === 0) {
+        setAnimeViewHasMore(false);
+      } else {
+        setAnimeViewItems((prev) => mergeUniqueAnime([...prev, ...nextItems]));
+        setAnimeViewPage(nextPage);
+        if (nextItems.length < 20) setAnimeViewHasMore(false);
+      }
+    } catch (error) {
+      console.error('Failed to load more anime:', error);
+      setAnimeViewHasMore(false);
+    } finally {
+      setAnimeViewLoadingMore(false);
+    }
+  }, [activeAnimeFeed, animeGenreFilter, animeViewPage, fetchAnimeFeedPage, mergeUniqueAnime]);
+
   return (
     <div className="discover-page page-shell min-h-screen bg-[#0F1014] pt-11 sm:pt-16 md:pt-20 pb-20 md:pb-8">
 
@@ -796,22 +885,97 @@ export default function DiscoverPage() {
                   </div>
                 </div>
 
-                <ContentCarousel
-                  title={
-                    activeAnimeFeed === 'now'
-                      ? 'Now Airing Anime'
-                      : activeAnimeFeed === 'upcoming'
-                        ? 'Upcoming Anime Releases'
-                        : activeAnimeFeed === 'top'
-                          ? 'Top Ranked Anime'
-                          : 'Popular Anime'
-                  }
-                  contents={animeHubSections[activeAnimeFeed]}
-                  isLoading={loadingStates.popular || loadingStates.topRankedAnime}
-                  size="medium"
-                  onContentClick={handleContentClick}
-                  onAddToLibrary={handleAddToLibrary}
-                />
+                {animeViewMore ? (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide pb-1">
+                        <button
+                          onClick={() => setAnimeGenreFilter('all')}
+                          className={`premium-chip whitespace-nowrap ${animeGenreFilter === 'all' ? 'bg-[#ffc562] text-black' : 'bg-white/[0.03] text-[#A7B0BE]'}`}
+                        >
+                          All Genres
+                        </button>
+                        {animeGenres.map((genre) => (
+                          <button
+                            key={`anime-genre-${genre}`}
+                            onClick={() => setAnimeGenreFilter(genre)}
+                            className={`premium-chip whitespace-nowrap ${animeGenreFilter === genre ? 'bg-[#ffc562] text-black' : 'bg-white/[0.03] text-[#A7B0BE]'}`}
+                          >
+                            {genre}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => {
+                          setAnimeViewMore(false);
+                          setAnimeGenreFilter('all');
+                        }}
+                        className="premium-chip bg-white/[0.03] text-[#A7B0BE] hover:text-[#F7F1E8]"
+                      >
+                        Collapse
+                      </button>
+                    </div>
+
+                    {animeViewLoading ? (
+                      <div className="text-center py-10">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#808080] mx-auto mb-4"></div>
+                        <p className="text-[#808080]">Loading anime catalog...</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4">
+                          {animeViewItems.map((content) => (
+                            <ContentCard
+                              key={`anime-view-${content.source}-${content.externalId}`}
+                              content={content}
+                              size="medium"
+                              onClick={handleContentClick}
+                              onAddToLibrary={handleAddToLibrary}
+                            />
+                          ))}
+                        </div>
+
+                        {animeViewHasMore && (
+                          <div className="text-center mt-8">
+                            <button
+                              onClick={() => void loadMoreAnime()}
+                              disabled={animeViewLoadingMore}
+                              className="premium-button-secondary px-6 py-3 text-[#F7F1E8] transition-all disabled:opacity-50"
+                            >
+                              {animeViewLoadingMore ? (
+                                <span className="flex items-center gap-2">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  Loading...
+                                </span>
+                              ) : (
+                                'View More Anime'
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <ContentCarousel
+                    title={
+                      activeAnimeFeed === 'now'
+                        ? 'Now Airing Anime'
+                        : activeAnimeFeed === 'upcoming'
+                          ? 'Upcoming Anime Releases'
+                          : activeAnimeFeed === 'top'
+                            ? 'Top Ranked Anime'
+                            : 'Popular Anime'
+                    }
+                    contents={animeHubSections[activeAnimeFeed]}
+                    isLoading={loadingStates.popular || loadingStates.topRankedAnime}
+                    size="medium"
+                    onContentClick={handleContentClick}
+                    onAddToLibrary={handleAddToLibrary}
+                    showViewAll
+                    onViewAll={() => setAnimeViewMore(true)}
+                  />
+                )}
               </div>
 
               <div>

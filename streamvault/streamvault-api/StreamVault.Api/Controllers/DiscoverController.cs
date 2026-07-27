@@ -2263,11 +2263,13 @@ public sealed class DiscoverController : ControllerBase
             var items = new List<object>();
             foreach (var a in arr.EnumerateArray())
             {
-                var id = a.TryGetProperty("mal_id", out var malIdProp) && malIdProp.ValueKind == System.Text.Json.JsonValueKind.Number
-                    ? malIdProp.GetInt32().ToString()
-                    : (a.TryGetProperty("_id", out var idProp) && idProp.ValueKind == System.Text.Json.JsonValueKind.String
-                        ? idProp.GetString()
-                        : null);
+                var malId = a.TryGetProperty("mal_id", out var malIdProp) && malIdProp.ValueKind == System.Text.Json.JsonValueKind.Number
+                    ? malIdProp.GetInt32()
+                    : (int?)null;
+
+                // Details/episodes/news routes require a valid MAL id; skip incompatible entries.
+                if (!malId.HasValue)
+                    continue;
 
                 var title = a.TryGetProperty("title", out var titleProp) && titleProp.ValueKind == System.Text.Json.JsonValueKind.String
                     ? titleProp.GetString()
@@ -2295,6 +2297,16 @@ public sealed class DiscoverController : ControllerBase
 
                 if (string.IsNullOrWhiteSpace(image) && a.TryGetProperty("image", out var imgProp) && imgProp.ValueKind == System.Text.Json.JsonValueKind.String)
                     image = imgProp.GetString();
+
+                if (!string.IsNullOrWhiteSpace(image))
+                {
+                    image = image.Trim();
+                    if (image.StartsWith("//", StringComparison.Ordinal))
+                        image = $"https:{image}";
+                    if (image.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+                        image = "https://" + image[7..];
+                    image = image.Replace("://myanimelist.net/", "://cdn.myanimelist.net/", StringComparison.OrdinalIgnoreCase);
+                }
 
                 var synopsis = a.TryGetProperty("synopsis", out var synProp) && synProp.ValueKind == System.Text.Json.JsonValueKind.String
                     ? synProp.GetString()
@@ -2335,7 +2347,7 @@ public sealed class DiscoverController : ControllerBase
 
                 items.Add(new
                 {
-                    externalId = id ?? "",
+                    externalId = malId.Value.ToString(),
                     title = title ?? "",
                     overview = synopsis ?? "",
                     posterPath = image,
