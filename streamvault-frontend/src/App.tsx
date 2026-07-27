@@ -51,6 +51,7 @@ function AppRoutes() {
         }
       >
         <Route index element={<DiscoverPage />} />
+        <Route path="anime" element={<DiscoverPage />} />
         <Route path="library/:status" element={<LibraryPage />} />
         <Route path="activity" element={<ActivityPage />} />
         <Route path="status" element={<ApiStatusPage />} />

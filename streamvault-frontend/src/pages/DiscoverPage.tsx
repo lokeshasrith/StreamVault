@@ -24,6 +24,7 @@ export default function DiscoverPage() {
   const navigate = useNavigate();
   const { token, userKey } = useAuth();
   const appRoot = userKey ? `/app/${userKey}` : '/auth';
+  const isAnimeExplorerPage = location.pathname.endsWith('/anime');
   const [searchParams, setSearchParams] = useSearchParams();
   const [addedToast, setAddedToast] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
@@ -58,6 +59,7 @@ export default function DiscoverPage() {
   const [animeViewLoadingMore, setAnimeViewLoadingMore] = useState(false);
   const [animeGenreFilter, setAnimeGenreFilter] = useState<string>('all');
   const [animeGenres, setAnimeGenres] = useState<string[]>([]);
+  const [animeGenreBoostLoading, setAnimeGenreBoostLoading] = useState(false);
   const [topRatedContent, setTopRatedContent] = useState<ContentItem[]>([]);
   const [genres, setGenres] = useState<string[]>([]);
   const [trendingIndia, setTrendingIndia] = useState<ContentItem[]>([]);
@@ -487,6 +489,12 @@ export default function DiscoverPage() {
     };
   }, [nowAiringAnime, upcomingAnime, topRankedAnime, popularAnime, topRatedContent, trendingContent]);
 
+  useEffect(() => {
+    if (isAnimeExplorerPage) {
+      setAnimeViewMore(true);
+    }
+  }, [isAnimeExplorerPage]);
+
   const fetchAnimeFeedPage = useCallback(async (feed: 'now' | 'upcoming' | 'top' | 'popular', page: number): Promise<ContentItem[]> => {
     switch (feed) {
       case 'now':
@@ -517,17 +525,17 @@ export default function DiscoverPage() {
       setAnimeViewPage(1);
       setAnimeViewHasMore(true);
       try {
-        let items: ContentItem[] = [];
-        if (animeGenreFilter !== 'all') {
-          items = await discoverApi.browseByGenre(animeGenreFilter, 'anime', 1);
-        } else {
-          items = await fetchAnimeFeedPage(activeAnimeFeed, 1);
-        }
+        const [first, second] = await Promise.all([
+          fetchAnimeFeedPage(activeAnimeFeed, 1),
+          fetchAnimeFeedPage(activeAnimeFeed, 2),
+        ]);
+        const items = [...first, ...second];
 
         if (!cancelled) {
           const merged = mergeUniqueAnime(items);
           setAnimeViewItems(merged);
-          setAnimeViewHasMore(merged.length >= 20);
+          setAnimeViewHasMore(merged.length >= 40);
+          setAnimeViewPage(2);
         }
       } catch (error) {
         if (!cancelled) {
@@ -544,13 +552,42 @@ export default function DiscoverPage() {
     return () => { cancelled = true; };
   }, [animeViewMore, animeGenreFilter, activeAnimeFeed, searchQuery, selectedGenre, animeHubSections, fetchAnimeFeedPage, mergeUniqueAnime]);
 
+  const filteredAnimeViewItems = useMemo(() => {
+    if (animeGenreFilter === 'all') return animeViewItems;
+    const needle = animeGenreFilter.toLowerCase();
+    return animeViewItems.filter((item) => (item.genres ?? []).some((g) => g.toLowerCase() === needle));
+  }, [animeGenreFilter, animeViewItems]);
+
+  useEffect(() => {
+    if (!animeViewMore || animeGenreFilter === 'all') return;
+    if (filteredAnimeViewItems.length > 0) return;
+
+    let cancelled = false;
+    const boost = async () => {
+      setAnimeGenreBoostLoading(true);
+      try {
+        const boosted = await discoverApi.browseByGenre(animeGenreFilter, 'anime', 1);
+        if (!cancelled && boosted.length > 0) {
+          setAnimeViewItems((prev) => mergeUniqueAnime([...prev, ...boosted]));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to boost anime genre results:', error);
+        }
+      } finally {
+        if (!cancelled) setAnimeGenreBoostLoading(false);
+      }
+    };
+
+    void boost();
+    return () => { cancelled = true; };
+  }, [animeViewMore, animeGenreFilter, filteredAnimeViewItems.length, mergeUniqueAnime]);
+
   const loadMoreAnime = useCallback(async () => {
     const nextPage = animeViewPage + 1;
     setAnimeViewLoadingMore(true);
     try {
-      const nextItems = animeGenreFilter !== 'all'
-        ? await discoverApi.browseByGenre(animeGenreFilter, 'anime', nextPage)
-        : await fetchAnimeFeedPage(activeAnimeFeed, nextPage);
+      const nextItems = await fetchAnimeFeedPage(activeAnimeFeed, nextPage);
 
       if (nextItems.length === 0) {
         setAnimeViewHasMore(false);
@@ -565,7 +602,7 @@ export default function DiscoverPage() {
     } finally {
       setAnimeViewLoadingMore(false);
     }
-  }, [activeAnimeFeed, animeGenreFilter, animeViewPage, fetchAnimeFeedPage, mergeUniqueAnime]);
+  }, [activeAnimeFeed, animeViewPage, fetchAnimeFeedPage, mergeUniqueAnime]);
 
   return (
     <div className="discover-page page-shell min-h-screen bg-[#0F1014] pt-11 sm:pt-16 md:pt-20 pb-20 md:pb-8">
@@ -588,7 +625,7 @@ export default function DiscoverPage() {
         />
       )}
 
-      <div className="mx-auto max-w-[1480px] px-3 sm:px-6 py-2 sm:py-8 space-y-5 sm:space-y-14 stagger-rise">
+      <div className={`mx-auto max-w-[1480px] px-3 sm:px-6 ${isAnimeExplorerPage ? 'py-4 sm:py-10 space-y-8 sm:space-y-12' : 'py-2 sm:py-8 space-y-5 sm:space-y-14'} stagger-rise`}>
         <div className="space-y-4 sm:space-y-12">
           {/* Header & Search */}
           <div className="text-center">
@@ -866,6 +903,14 @@ export default function DiscoverPage() {
                     <span className="premium-kicker">Jikan Powered</span>
                     <h2 className="section-heading text-xl sm:text-4xl text-[#F7F1E8] mt-2">Anime Hub</h2>
                     <p className="text-[#98A2B3] text-xs sm:text-sm mt-1">Now airing, upcoming, top ranked, and by popularity from Jikan.</p>
+                    {isAnimeExplorerPage && (
+                      <button
+                        onClick={() => navigate(appRoot)}
+                        className="mt-3 premium-chip bg-white/[0.03] text-[#A7B0BE] hover:text-[#F7F1E8]"
+                      >
+                        Back to Discover
+                      </button>
+                    )}
                   </div>
                   <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
                     {[
@@ -886,8 +931,8 @@ export default function DiscoverPage() {
                 </div>
 
                 {animeViewMore ? (
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="space-y-5 sm:space-y-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
                       <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide pb-1">
                         <button
                           onClick={() => setAnimeGenreFilter('all')}
@@ -907,6 +952,10 @@ export default function DiscoverPage() {
                       </div>
                       <button
                         onClick={() => {
+                          if (isAnimeExplorerPage) {
+                            navigate(appRoot);
+                            return;
+                          }
                           setAnimeViewMore(false);
                           setAnimeGenreFilter('all');
                         }}
@@ -923,8 +972,8 @@ export default function DiscoverPage() {
                       </div>
                     ) : (
                       <>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4">
-                          {animeViewItems.map((content) => (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-4 md:gap-5">
+                          {filteredAnimeViewItems.map((content) => (
                             <ContentCard
                               key={`anime-view-${content.source}-${content.externalId}`}
                               content={content}
@@ -934,6 +983,14 @@ export default function DiscoverPage() {
                             />
                           ))}
                         </div>
+
+                        {animeGenreBoostLoading && (
+                          <p className="text-center text-xs text-[#98A2B3]">Finding more results for {animeGenreFilter}...</p>
+                        )}
+
+                        {!animeGenreBoostLoading && filteredAnimeViewItems.length === 0 && (
+                          <p className="text-center text-sm text-[#98A2B3]">No anime found for this genre in the current feed yet.</p>
+                        )}
 
                         {animeViewHasMore && (
                           <div className="text-center mt-8">
@@ -973,11 +1030,12 @@ export default function DiscoverPage() {
                     onContentClick={handleContentClick}
                     onAddToLibrary={handleAddToLibrary}
                     showViewAll
-                    onViewAll={() => setAnimeViewMore(true)}
+                    onViewAll={() => navigate(`${appRoot}/anime`)}
                   />
                 )}
               </div>
 
+              {!isAnimeExplorerPage && (
               <div>
                 <MultiContentCarousel
                   sections={priorityCarouselSections}
@@ -987,12 +1045,14 @@ export default function DiscoverPage() {
                   onAddToLibrary={handleAddToLibrary}
                 />
               </div>
+              )}
 
               {/* Entertainment News Section */}
-              {(loadingStates.news || newsItems.length > 0) && (
+              {!isAnimeExplorerPage && (loadingStates.news || newsItems.length > 0) && (
                 <NewsSection news={newsItems} isLoading={loadingStates.news} />
               )}
 
+              {!isAnimeExplorerPage && (
               <div>
                 <MultiContentCarousel
                   sections={secondaryCarouselSections}
@@ -1001,11 +1061,12 @@ export default function DiscoverPage() {
                   onAddToLibrary={handleAddToLibrary}
                 />
               </div>
+              )}
             </>
           )}
 
           {/* Genre Browse Section */}
-          {!searchQuery && !selectedGenre && !loadingStates.genres && (
+          {!isAnimeExplorerPage && !searchQuery && !selectedGenre && !loadingStates.genres && (
             <div id="discover-genre-grid" className="max-w-6xl mx-auto premium-panel px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
               <h2 className="section-heading text-xl sm:text-4xl text-[#F7F1E8] mb-5 sm:mb-7 tracking-tight flex items-center gap-3">
                 <Filter className="w-5 h-5 text-[#FFD48C]" />
