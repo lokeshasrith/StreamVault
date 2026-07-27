@@ -427,27 +427,27 @@ export default function DiscoverPage() {
       isLoading: loadingStates.popular
     },
     {
-      title: "🎬 Hindi (Bollywood)",
+      title: "Hindi (Bollywood)",
       contents: hindiContent,
       isLoading: loadingStates.india
     },
     {
-      title: "🎬 Telugu (Tollywood)",
+      title: "Telugu (Tollywood)",
       contents: teluguContent,
       isLoading: loadingStates.india
     },
     {
-      title: "🎬 Tamil (Kollywood)",
+      title: "Tamil (Kollywood)",
       contents: tamilContent,
       isLoading: loadingStates.india
     },
     {
-      title: "🎬 Malayalam",
+      title: "Malayalam",
       contents: malayalamContent,
       isLoading: loadingStates.india
     },
     {
-      title: "🎬 Kannada (Sandalwood)",
+      title: "Kannada (Sandalwood)",
       contents: kannadaContent,
       isLoading: loadingStates.india
     },
