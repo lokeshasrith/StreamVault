@@ -98,6 +98,22 @@ public class ContentApiService : IContentApiService
         ("Sherlock", 2010)
     };
 
+    private static readonly (string MalId, string Title, int? Year, decimal? Rating, string? GenresCsv)[] AnimeStaticFallback =
+    {
+        ("16498", "Attack on Titan", 2013, 9.0m, "Action,Drama"),
+        ("52991", "Frieren: Beyond Journey's End", 2023, 9.2m, "Adventure,Drama"),
+        ("5114", "Fullmetal Alchemist: Brotherhood", 2009, 9.1m, "Action,Fantasy"),
+        ("9253", "Steins;Gate", 2011, 9.0m, "Sci-Fi,Thriller"),
+        ("21", "One Piece", 1999, 8.7m, "Action,Adventure"),
+        ("11061", "Hunter x Hunter", 2011, 9.0m, "Action,Adventure"),
+        ("1535", "Death Note", 2006, 8.9m, "Mystery,Thriller"),
+        ("38000", "Demon Slayer: Kimetsu no Yaiba", 2019, 8.6m, "Action,Fantasy"),
+        ("40748", "Jujutsu Kaisen", 2020, 8.7m, "Action,Supernatural"),
+        ("20", "Naruto", 2002, 8.4m, "Action,Adventure"),
+        ("1735", "Naruto Shippuden", 2007, 8.6m, "Action,Adventure"),
+        ("30276", "One Punch Man", 2015, 8.7m, "Action,Comedy")
+    };
+
     private bool HasTmdbApiKey =>
         !string.IsNullOrWhiteSpace(_tmdbApiKey) &&
         !_tmdbApiKey.Contains("CHANGE_ME", StringComparison.OrdinalIgnoreCase);
@@ -459,6 +475,40 @@ query ($page: Int, $perPage: Int, $search: String, $status: MediaStatus, $sort: 
             .ToList();
     }
 
+    private async Task<List<Content>> TryGetAniListAnimeSafeAsync(int page, int perPage, string sort, string? status = null, string? search = null)
+    {
+        try
+        {
+            return await GetAniListAnimeAsync(page, perPage, sort, status, search);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"AniList fallback failed: {ex.Message}");
+            return new List<Content>();
+        }
+    }
+
+    private static List<Content> BuildAnimeStaticFallback(int page = 1, int pageSize = 12)
+    {
+        return AnimeStaticFallback
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a => new Content
+            {
+                ExternalId = a.MalId,
+                Source = "MAL_ANIME",
+                Type = ContentType.anime,
+                Title = a.Title,
+                Year = a.Year,
+                PosterUrl = $"https://img.anili.st/{a.MalId}",
+                BackdropUrl = $"https://img.anili.st/{a.MalId}",
+                Rating = a.Rating,
+                Synopsis = "Curated fallback while upstream anime providers are unavailable.",
+                GenresCsv = a.GenresCsv
+            })
+            .ToList();
+    }
+
     /// <summary>Throttled + cached TMDB GET to stay under the 40 req/10s rate limit.</summary>
     private async Task<string> GetTmdbCachedAsync(string url)
     {
@@ -540,12 +590,14 @@ query ($page: Int, $perPage: Int, $search: String, $status: MediaStatus, $sort: 
             var jikanItems = jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
             if (jikanItems.Count > 0) return jikanItems;
 
-            return await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC", search: cleanQuery);
+            var aniList = await TryGetAniListAnimeSafeAsync(page, 20, "POPULARITY_DESC", search: cleanQuery);
+            return aniList.Count > 0 ? aniList : BuildAnimeStaticFallback(page);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error searching anime: {ex.Message}");
-            return await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC", search: query);
+            var aniList = await TryGetAniListAnimeSafeAsync(page, 20, "POPULARITY_DESC", search: query);
+            return aniList.Count > 0 ? aniList : BuildAnimeStaticFallback(page);
         }
     }
 
@@ -776,12 +828,14 @@ query ($page: Int, $perPage: Int, $search: String, $status: MediaStatus, $sort: 
             var jikanItems = jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
             if (jikanItems.Count > 0) return jikanItems;
 
-            return await GetAniListAnimeAsync(page, 20, "TRENDING_DESC");
+            var aniList = await TryGetAniListAnimeSafeAsync(page, 20, "TRENDING_DESC");
+            return aniList.Count > 0 ? aniList : BuildAnimeStaticFallback(page);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting trending anime: {ex.Message}");
-            return await GetAniListAnimeAsync(page, 20, "TRENDING_DESC");
+            var aniList = await TryGetAniListAnimeSafeAsync(page, 20, "TRENDING_DESC");
+            return aniList.Count > 0 ? aniList : BuildAnimeStaticFallback(page);
         }
     }
 
@@ -796,12 +850,14 @@ query ($page: Int, $perPage: Int, $search: String, $status: MediaStatus, $sort: 
             var jikanItems = jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
             if (jikanItems.Count > 0) return jikanItems;
 
-            return await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC", status: "RELEASING");
+            var aniList = await TryGetAniListAnimeSafeAsync(page, 20, "POPULARITY_DESC", status: "RELEASING");
+            return aniList.Count > 0 ? aniList : BuildAnimeStaticFallback(page);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting now airing anime: {ex.Message}");
-            return await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC", status: "RELEASING");
+            var aniList = await TryGetAniListAnimeSafeAsync(page, 20, "POPULARITY_DESC", status: "RELEASING");
+            return aniList.Count > 0 ? aniList : BuildAnimeStaticFallback(page);
         }
     }
 
@@ -864,12 +920,14 @@ query ($page: Int, $perPage: Int, $search: String, $status: MediaStatus, $sort: 
             var jikanItems = jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
             if (jikanItems.Count > 0) return jikanItems;
 
-            return await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC");
+            var aniList = await TryGetAniListAnimeSafeAsync(page, 20, "POPULARITY_DESC");
+            return aniList.Count > 0 ? aniList : BuildAnimeStaticFallback(page);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting popular anime: {ex.Message}");
-            return await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC");
+            var aniList = await TryGetAniListAnimeSafeAsync(page, 20, "POPULARITY_DESC");
+            return aniList.Count > 0 ? aniList : BuildAnimeStaticFallback(page);
         }
     }
 
@@ -932,12 +990,14 @@ query ($page: Int, $perPage: Int, $search: String, $status: MediaStatus, $sort: 
             var jikanItems = jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
             if (jikanItems.Count > 0) return jikanItems;
 
-            return await GetAniListAnimeAsync(page, 20, "SCORE_DESC");
+            var aniList = await TryGetAniListAnimeSafeAsync(page, 20, "SCORE_DESC");
+            return aniList.Count > 0 ? aniList : BuildAnimeStaticFallback(page);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting top rated anime: {ex.Message}");
-            return await GetAniListAnimeAsync(page, 20, "SCORE_DESC");
+            var aniList = await TryGetAniListAnimeSafeAsync(page, 20, "SCORE_DESC");
+            return aniList.Count > 0 ? aniList : BuildAnimeStaticFallback(page);
         }
     }
 
@@ -962,7 +1022,8 @@ query ($page: Int, $perPage: Int, $search: String, $status: MediaStatus, $sort: 
 
             if (jikanItems.Count > 0) return jikanItems;
 
-            var aniListItems = await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC", status: "NOT_YET_RELEASED");
+            var aniListItems = await TryGetAniListAnimeSafeAsync(page, 20, "POPULARITY_DESC", status: "NOT_YET_RELEASED");
+            if (aniListItems.Count == 0) return BuildAnimeStaticFallback(page);
             foreach (var item in aniListItems)
             {
                 item.GenresCsv = string.IsNullOrWhiteSpace(item.GenresCsv)
@@ -974,7 +1035,8 @@ query ($page: Int, $perPage: Int, $search: String, $status: MediaStatus, $sort: 
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting upcoming anime: {ex.Message}");
-            var aniListItems = await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC", status: "NOT_YET_RELEASED");
+            var aniListItems = await TryGetAniListAnimeSafeAsync(page, 20, "POPULARITY_DESC", status: "NOT_YET_RELEASED");
+            if (aniListItems.Count == 0) return BuildAnimeStaticFallback(page);
             foreach (var item in aniListItems)
             {
                 item.GenresCsv = string.IsNullOrWhiteSpace(item.GenresCsv)

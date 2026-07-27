@@ -289,7 +289,10 @@ function buildProxyImageUrl(url: string): string {
 function shouldBypassProxy(url: string): boolean {
   try {
     const hostname = new URL(url).hostname.toLowerCase();
-    return hostname === 'cdn.myanimelist.net' || hostname === 'myanimelist.net';
+    return hostname === 'cdn.myanimelist.net'
+      || hostname === 'myanimelist.net'
+      || hostname === 'img.anili.st'
+      || hostname === 's4.anilist.co';
   } catch {
     return false;
   }
