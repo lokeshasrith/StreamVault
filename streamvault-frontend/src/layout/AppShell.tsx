@@ -22,7 +22,6 @@ const NAV_ITEMS = [
   { to: "/library/on-hold", label: "On Hold", icon: PauseCircle },
 ];
 
-/* Bottom nav items for mobile (subset) */
 const MOBILE_NAV = [
   { to: "/", label: "Discover", icon: Compass, end: true },
   { to: "/activity", label: "Activity", icon: Activity },
@@ -40,7 +39,7 @@ export default function AppShell() {
   const nav = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const [query, setQuery] = React.useState(searchParams.get('q') || "");
+  const [query, setQuery] = React.useState(searchParams.get("q") || "");
   const [searchFocused, setSearchFocused] = React.useState(false);
   const [suggestions, setSuggestions] = React.useState<ContentItem[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = React.useState(false);
@@ -50,7 +49,6 @@ export default function AppShell() {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const committedQuery = React.useRef<string>("");
 
-  // ── Recent Searches (per-user, localStorage) ──
   const recentSearchesKey = React.useMemo(() => {
     if (!activeUserKey) return null;
     return `sv_recent_searches_${activeUserKey}`;
@@ -62,30 +60,31 @@ export default function AppShell() {
     catch { return []; }
   });
 
-  // Sync recent searches to localStorage
   React.useEffect(() => {
     if (!recentSearchesKey) return;
     localStorage.setItem(recentSearchesKey, JSON.stringify(recentSearches));
   }, [recentSearches, recentSearchesKey]);
 
-  // Re-load when key changes (login/logout)
   React.useEffect(() => {
-    if (!recentSearchesKey) { setRecentSearches([]); return; }
+    if (!recentSearchesKey) {
+      setRecentSearches([]);
+      return;
+    }
     try { setRecentSearches(JSON.parse(localStorage.getItem(recentSearchesKey) || "[]")); }
     catch { setRecentSearches([]); }
   }, [recentSearchesKey]);
 
-  const addRecentSearch = React.useCallback((q: string) => {
-    const trimmed = q.trim();
+  const addRecentSearch = React.useCallback((value: string) => {
+    const trimmed = value.trim();
     if (!trimmed) return;
-    setRecentSearches(prev => {
-      const filtered = prev.filter(s => s.toLowerCase() !== trimmed.toLowerCase());
-      return [trimmed, ...filtered].slice(0, 10); // Keep max 10
+    setRecentSearches((prev) => {
+      const filtered = prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase());
+      return [trimmed, ...filtered].slice(0, 10);
     });
   }, []);
 
-  const removeRecentSearch = React.useCallback((q: string) => {
-    setRecentSearches(prev => prev.filter(s => s !== q));
+  const removeRecentSearch = React.useCallback((value: string) => {
+    setRecentSearches((prev) => prev.filter((item) => item !== value));
   }, []);
 
   const clearAllRecentSearches = React.useCallback(() => {
@@ -95,10 +94,9 @@ export default function AppShell() {
   const showRecentSearches = searchFocused && query.trim().length < 2 && recentSearches.length > 0 && !showDropdown;
 
   React.useEffect(() => {
-    setQuery(searchParams.get('q') || "");
+    setQuery(searchParams.get("q") || "");
   }, [searchParams]);
 
-  // Debounced live search for suggestions
   React.useEffect(() => {
     if (query.trim().length < 2) {
       setSuggestions([]);
@@ -107,7 +105,6 @@ export default function AppShell() {
       return;
     }
 
-    // Show dropdown immediately with loading state
     setShowDropdown(true);
     setSuggestionsLoading(true);
 
@@ -131,16 +128,14 @@ export default function AppShell() {
     return () => { clearTimeout(timer); controller.abort(); };
   }, [query]);
 
-  // Dispatch search event for DiscoverPage full results (on Enter)
-  const commitSearch = (q: string) => {
+  const commitSearch = (value: string) => {
     setShowDropdown(false);
     setSuggestions([]);
-    committedQuery.current = q.trim();
-    if (q.trim()) addRecentSearch(q.trim());
-    window.dispatchEvent(new CustomEvent("sv:search", { detail: q }));
+    committedQuery.current = value.trim();
+    if (value.trim()) addRecentSearch(value.trim());
+    window.dispatchEvent(new CustomEvent("sv:search", { detail: value }));
   };
 
-  // Close dropdown on outside click
   React.useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -151,10 +146,9 @@ export default function AppShell() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Navigate to content detail
   const goToContent = (item: ContentItem) => {
-    const t = item.type === 'anime' ? 'anime' : item.type === 'tv' ? 'tv' : 'movie';
-    nav(`/content/${t}/${item.externalId}`, {
+    const type = item.type === "anime" ? "anime" : item.type === "tv" ? "tv" : "movie";
+    nav(`/content/${type}/${item.externalId}`, {
       state: { from: `${location.pathname}${location.search}` },
     });
     setShowDropdown(false);
@@ -162,18 +156,18 @@ export default function AppShell() {
     setQuery("");
   };
 
-  // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showDropdown || suggestions.length === 0) {
       if (e.key === "Enter" && query.trim()) commitSearch(query);
       return;
     }
+
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveIndex(i => (i + 1) % suggestions.length);
+      setActiveIndex((i) => (i + 1) % suggestions.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIndex(i => (i <= 0 ? suggestions.length - 1 : i - 1));
+      setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (activeIndex >= 0) {
@@ -226,7 +220,6 @@ export default function AppShell() {
 
     if (isIos && !isStandalone) {
       setShowIosInstallHint(true);
-      return;
     }
   }, [installPrompt, isIos, isStandalone]);
 
@@ -264,32 +257,40 @@ export default function AppShell() {
 
   return (
     <div className="app-shell-bg min-h-screen overflow-x-hidden text-[#F4EFE6]">
-      {/* ── Top Bar ────────────────────────────────────────────────── */}
       <header className="mobile-top-header fixed top-0 left-0 right-0 z-50 px-1.5 pt-1.5 sm:px-4 sm:pt-3 md:px-6">
-        <div
-          className="mx-auto max-w-[1480px] premium-panel nav-sheen px-2.5 py-2 sm:px-4 md:px-6 md:py-3 overflow-visible"
-        >
-          <div className="flex items-center gap-1.5 sm:gap-4 md:gap-6">
-            {/* Brand */}
+        <div className="app-header-shell mx-auto max-w-[1580px] premium-panel nav-sheen px-2.5 py-2.5 sm:px-4 md:px-5 md:py-3 overflow-visible">
+          <div className="flex items-center gap-2 sm:gap-4 md:hidden">
+            <button onClick={() => { setQuery(""); nav(withUserRoot("/")); }} className="flex items-center gap-2 flex-shrink-0 cursor-pointer group">
+              <StreamVaultLogo size={40} compact />
+            </button>
+            <div className="flex-1" />
+            <button className="app-header-action md:hidden" onClick={() => setMobileSearchOpen(true)}>
+              <Search className="w-5 h-5" />
+            </button>
+            <button className="app-header-action md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="hidden md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-4 lg:gap-5">
             <button
               onClick={() => { setQuery(""); nav(withUserRoot("/")); }}
-              className="flex items-center gap-2 sm:gap-3 flex-shrink-0 cursor-pointer group"
+              className="app-brand-block flex items-center rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] px-3 py-2.5 text-left transition-all duration-300 hover:border-[#ffc562]/22 hover:bg-white/[0.04]"
             >
-              <StreamVaultLogo size={40} className="sm:[&>div:last-child]:block [&>div:last-child]:hidden" />
+              <StreamVaultLogo size={46} />
             </button>
 
-            {/* Desktop Navigation — hidden on mobile */}
-            <nav className="hidden md:flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+            <nav className="app-nav-deck flex min-w-0 items-center justify-center gap-1.5 rounded-[26px] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(13,16,22,0.82),rgba(8,11,17,0.78))] px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] overflow-x-auto scrollbar-hide">
               {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
                 <NavLink
                   key={`${activeUserKey}-desktop-${to}`}
                   to={withUserRoot(to)}
                   end={end}
                   className={({ isActive }) =>
-                    `flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.14em] whitespace-nowrap transition-all duration-200 ${
+                    `app-nav-link flex items-center gap-2 rounded-[20px] px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] whitespace-nowrap transition-all duration-200 ${
                       isActive
-                        ? "bg-[linear-gradient(135deg,rgba(255,197,98,0.18),rgba(255,107,61,0.12))] text-[#fff7e8] border border-[#ffc562]/25 shadow-[0_12px_30px_rgba(255,149,87,0.12)]"
-                        : "text-white/48 hover:text-white hover:bg-white/[0.05] border border-transparent"
+                        ? "border border-[#ffc562]/24 bg-[linear-gradient(135deg,rgba(255,197,98,0.22),rgba(255,107,61,0.12))] text-[#fff7e8] shadow-[0_14px_30px_rgba(255,149,87,0.12)]"
+                        : "border border-transparent text-white/44 hover:text-white hover:bg-white/[0.045]"
                     }`
                   }
                 >
@@ -299,192 +300,163 @@ export default function AppShell() {
               ))}
             </nav>
 
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* Mobile Search Toggle */}
-            <button
-              className="md:hidden rounded-2xl border border-white/10 bg-white/[0.04] p-2 text-white/60 transition-colors hover:text-white cursor-pointer"
-              onClick={() => setMobileSearchOpen(true)}
-            >
-              <Search className="w-5 h-5" />
-            </button>
-
-            <div ref={dropdownRef} className={`hidden md:block relative transition-all duration-300 ${searchFocused ? "w-[26rem]" : "w-[15rem]"}`}>
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5AD3FF]/70 z-10" />
-              <input
-                ref={inputRef}
-                className="w-full rounded-full border border-white/10 bg-[#090d13]/92 py-3 pl-11 pr-10 text-sm text-white placeholder:text-white/26 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all focus:outline-none focus:border-[#ffc562]/35 focus:bg-[#0b1017]/95"
-                placeholder="Search movies, shows, anime…"
-                value={query}
-                onChange={(e) => { setQuery(e.target.value); committedQuery.current = ""; }}
-                onFocus={() => { setSearchFocused(true); if (suggestions.length > 0 && query.trim().length >= 2) setShowDropdown(true); }}
-                onBlur={() => { setTimeout(() => setSearchFocused(false), 200); }}
-                onKeyDown={handleKeyDown}
-              />
-              {query && (
-                <button
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors cursor-pointer"
-                  onMouseDown={(e) => { e.preventDefault(); setQuery(""); setSuggestions([]); setShowDropdown(false); commitSearch(""); }}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-
-              {/* Search Suggestions Dropdown */}
-              <AnimatePresence>
-                {showDropdown && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-full mt-3 left-0 right-0 premium-panel overflow-hidden z-[100]"
+            <div className="app-header-tools flex items-center gap-2 lg:gap-3">
+              <div ref={dropdownRef} className={`relative transition-all duration-300 ${searchFocused ? "w-[25rem]" : "w-[17rem]"}`}>
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5AD3FF]/70 z-10" />
+                <input
+                  ref={inputRef}
+                  className="app-header-search w-full rounded-[22px] border border-white/10 bg-white/[0.03] py-3 pl-11 pr-10 text-sm text-white placeholder:text-white/24 outline-none transition-all focus:border-[#5AD3FF]/30 focus:bg-white/[0.05]"
+                  placeholder="Search movies, shows, anime…"
+                  value={query}
+                  onChange={(e) => { setQuery(e.target.value); committedQuery.current = ""; }}
+                  onFocus={() => { setSearchFocused(true); if (suggestions.length > 0 && query.trim().length >= 2) setShowDropdown(true); }}
+                  onBlur={() => { setTimeout(() => setSearchFocused(false), 200); }}
+                  onKeyDown={handleKeyDown}
+                />
+                {query && (
+                  <button
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors cursor-pointer"
+                    onMouseDown={(e) => { e.preventDefault(); setQuery(""); setSuggestions([]); setShowDropdown(false); commitSearch(""); }}
                   >
-                    {suggestionsLoading && suggestions.length === 0 ? (
-                      <div className="px-4 py-8 text-center">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white/40 mx-auto mb-2" />
-                        <p className="text-[11px] text-white/40">Searching…</p>
-                      </div>
-                    ) : suggestions.length > 0 ? (
-                      <>
-                        <div className="max-h-[420px] overflow-y-auto">
-                          {suggestions.map((item, idx) => {
-                            const TypeIcon = TYPE_ICON[item.type] || Film;
-                            const year = formatYear(item.releaseDate);
-                            return (
-                              <button
-                                key={`${item.source}-${item.externalId}`}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors cursor-pointer ${
-                                  idx === activeIndex ? "bg-white/10" : "hover:bg-white/5"
-                                }`}
-                                onMouseDown={(e) => { e.preventDefault(); goToContent(item); }}
-                                onMouseEnter={() => setActiveIndex(idx)}
-                              >
-                                {/* Poster Thumbnail */}
-                                <div className="w-10 h-14 rounded overflow-hidden flex-shrink-0 bg-white/5">
-                                  <img
-                                    src={getImageUrl(item.posterPath, 'small')}
-                                    alt=""
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_POSTER; }}
-                                  />
-                                </div>
-                                {/* Info */}
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm text-white font-medium truncate">{item.title}</p>
-                                  <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="inline-flex items-center gap-1 text-[11px] text-white/40">
-                                      <TypeIcon className="w-3 h-3" />
-                                      {getContentTypeLabel(item.type)}
-                                    </span>
-                                    {year && <span className="text-[11px] text-white/30">{year}</span>}
-                                    {item.voteAverage > 0 && (
-                                      <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#F5C518]">
-                                        <Star className="w-2.5 h-2.5 fill-current" />
-                                        {formatRating(item.voteAverage)}
-                                      </span>
-                                    )}
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
+                <AnimatePresence>
+                  {showDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full mt-3 left-0 right-0 premium-panel overflow-hidden z-[100]"
+                    >
+                      {suggestionsLoading && suggestions.length === 0 ? (
+                        <div className="px-4 py-8 text-center">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white/40 mx-auto mb-2" />
+                          <p className="text-[11px] text-white/40">Searching…</p>
+                        </div>
+                      ) : suggestions.length > 0 ? (
+                        <>
+                          <div className="max-h-[420px] overflow-y-auto">
+                            {suggestions.map((item, idx) => {
+                              const TypeIcon = TYPE_ICON[item.type] || Film;
+                              const year = formatYear(item.releaseDate);
+                              return (
+                                <button
+                                  key={`${item.source}-${item.externalId}`}
+                                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors cursor-pointer ${idx === activeIndex ? "bg-white/10" : "hover:bg-white/5"}`}
+                                  onMouseDown={(e) => { e.preventDefault(); goToContent(item); }}
+                                  onMouseEnter={() => setActiveIndex(idx)}
+                                >
+                                  <div className="w-10 h-14 rounded overflow-hidden flex-shrink-0 bg-white/5">
+                                    <img
+                                      src={getImageUrl(item.posterPath, "small")}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_POSTER; }}
+                                    />
                                   </div>
-                                </div>
-                              </button>
-                            );
-                          })}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm text-white font-medium truncate">{item.title}</p>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                      <span className="inline-flex items-center gap-1 text-[11px] text-white/40">
+                                        <TypeIcon className="w-3 h-3" />
+                                        {getContentTypeLabel(item.type)}
+                                      </span>
+                                      {year && <span className="text-[11px] text-white/30">{year}</span>}
+                                      {item.voteAverage > 0 && (
+                                        <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#F5C518]">
+                                          <Star className="w-2.5 h-2.5 fill-current" />
+                                          {formatRating(item.voteAverage)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <button
+                            className="w-full px-4 py-2.5 text-center text-xs text-white/40 hover:text-white hover:bg-white/5 transition-colors border-t border-white/[0.06] cursor-pointer"
+                            onMouseDown={(e) => { e.preventDefault(); commitSearch(query); }}
+                          >
+                            View all results for &ldquo;{query}&rdquo;
+                          </button>
+                        </>
+                      ) : query.trim().length >= 2 && !suggestionsLoading ? (
+                        <div className="px-4 py-6 text-center text-white/40 text-sm">
+                          No results for &ldquo;{query}&rdquo;
                         </div>
-                        {/* View all results footer */}
+                      ) : null}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                  {showRecentSearches && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full mt-3 left-0 right-0 premium-panel overflow-hidden z-50"
+                    >
+                      <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
+                        <span className="text-[11px] font-semibold text-white/30 uppercase tracking-wider">Recent</span>
                         <button
-                          className="w-full px-4 py-2.5 text-center text-xs text-white/40 hover:text-white hover:bg-white/5 transition-colors border-t border-white/[0.06] cursor-pointer"
-                          onMouseDown={(e) => { e.preventDefault(); commitSearch(query); }}
+                          className="text-[11px] text-white/20 hover:text-[#E50914] transition-colors cursor-pointer"
+                          onMouseDown={(e) => { e.preventDefault(); clearAllRecentSearches(); }}
                         >
-                          View all results for &ldquo;{query}&rdquo;
+                          Clear All
                         </button>
-                      </>
-                    ) : query.trim().length >= 2 && !suggestionsLoading ? (
-                      <div className="px-4 py-6 text-center text-white/40 text-sm">
-                        No results for &ldquo;{query}&rdquo;
                       </div>
-                    ) : null}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                      <div className="max-h-[320px] overflow-y-auto pb-1">
+                        {recentSearches.map((term) => (
+                          <div key={term} className="flex items-center gap-3 px-3 py-2 hover:bg-white/5 transition-colors group">
+                            <Clock className="w-3.5 h-3.5 text-white/20 flex-shrink-0" />
+                            <button
+                              className="flex-1 text-left text-sm text-white/50 hover:text-white truncate cursor-pointer"
+                              onMouseDown={(e) => { e.preventDefault(); setQuery(term); commitSearch(term); }}
+                            >
+                              {term}
+                            </button>
+                            <button
+                              className="opacity-0 group-hover:opacity-100 p-1 rounded text-white/20 hover:text-[#E50914] hover:bg-[#E50914]/10 transition-all cursor-pointer"
+                              onMouseDown={(e) => { e.preventDefault(); removeRecentSearch(term); }}
+                              title="Remove"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-              {/* Recent Searches Dropdown */}
-              <AnimatePresence>
-                {showRecentSearches && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-full mt-3 left-0 right-0 premium-panel overflow-hidden z-50"
-                  >
-                    <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
-                      <span className="text-[11px] font-semibold text-white/30 uppercase tracking-wider">Recent</span>
-                      <button
-                        className="text-[11px] text-white/20 hover:text-[#E50914] transition-colors cursor-pointer"
-                        onMouseDown={(e) => { e.preventDefault(); clearAllRecentSearches(); }}
-                      >
-                        Clear All
-                      </button>
-                    </div>
-                    <div className="max-h-[320px] overflow-y-auto pb-1">
-                      {recentSearches.map((term) => (
-                        <div
-                          key={term}
-                          className="flex items-center gap-3 px-3 py-2 hover:bg-white/5 transition-colors group"
-                        >
-                          <Clock className="w-3.5 h-3.5 text-white/20 flex-shrink-0" />
-                          <button
-                            className="flex-1 text-left text-sm text-white/50 hover:text-white truncate cursor-pointer"
-                            onMouseDown={(e) => { e.preventDefault(); setQuery(term); commitSearch(term); }}
-                          >
-                            {term}
-                          </button>
-                          <button
-                            className="opacity-0 group-hover:opacity-100 p-1 rounded text-white/20 hover:text-[#E50914] hover:bg-[#E50914]/10 transition-all cursor-pointer"
-                            onMouseDown={(e) => { e.preventDefault(); removeRecentSearch(term); }}
-                            title="Remove"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <NavLink
+                to={withUserRoot("/status")}
+                className={({ isActive }) =>
+                  `app-header-action hidden md:flex ${isActive ? "border-[#5AD3FF]/35 bg-[#5AD3FF]/10 text-[#dff8ff]" : "border-white/10 bg-white/[0.03] text-white/46 hover:text-white"}`
+                }
+                title="API Status"
+              >
+                <Activity className="w-4 h-4" />
+              </NavLink>
+
+              <button
+                onClick={() => { logout(); nav("/auth"); }}
+                className="app-header-action hidden md:flex text-white/42 hover:text-[#ff9a67]"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
-
-            {/* Status + Logout */}
-            <NavLink
-              to={withUserRoot('/status')}
-              className={({ isActive }) =>
-                `hidden md:flex items-center justify-center rounded-2xl border px-3 py-2 transition-all ${isActive ? "border-[#5AD3FF]/35 bg-[#5AD3FF]/10 text-[#dff8ff]" : "border-white/10 bg-white/[0.03] text-white/46 hover:text-white"}`
-              }
-              title="API Status"
-            >
-              <Activity className="w-4 h-4" />
-            </NavLink>
-
-            {/* Mobile hamburger for full nav */}
-            <button
-              className="md:hidden rounded-2xl border border-white/10 bg-white/[0.04] p-2 text-white/60 transition-colors hover:text-white cursor-pointer"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            <button
-              onClick={() => { logout(); nav("/auth"); }}
-              className="hidden md:flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] p-2.5 text-white/42 transition-all hover:text-[#ff9a67] cursor-pointer"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
           </div>
         </div>
 
-        {/* Mobile slide-down nav menu */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
@@ -548,16 +520,10 @@ export default function AppShell() {
               On iPhone/iPad: open Safari Share menu and choose <span className="font-semibold text-[#ffd48c]">Add to Home Screen</span>.
             </p>
             <div className="mt-2 flex items-center justify-end gap-2">
-              <button
-                className="premium-chip bg-white/[0.03] text-white/70"
-                onClick={() => setShowIosInstallHint(false)}
-              >
+              <button className="premium-chip bg-white/[0.03] text-white/70" onClick={() => setShowIosInstallHint(false)}>
                 Close
               </button>
-              <button
-                className="premium-chip bg-[#5ad3ff]/15 text-[#dff8ff]"
-                onClick={() => { setInstallHintDismissed(true); setShowIosInstallHint(false); }}
-              >
+              <button className="premium-chip bg-[#5ad3ff]/15 text-[#dff8ff]" onClick={() => { setInstallHintDismissed(true); setShowIosInstallHint(false); }}>
                 Don't show again
               </button>
             </div>
@@ -565,7 +531,6 @@ export default function AppShell() {
         )}
       </AnimatePresence>
 
-      {/* ── Mobile Full-Screen Search Overlay ─────────────────────── */}
       <AnimatePresence>
         {mobileSearchOpen && (
           <motion.div
@@ -574,7 +539,6 @@ export default function AppShell() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] bg-[#05070b]/98 md:hidden flex flex-col"
           >
-            {/* Search header */}
             <div className="mobile-search-header flex items-center gap-2.5 border-b border-white/[0.06] px-3 py-3">
               <Search className="w-5 h-5 text-[#5AD3FF]/70 flex-shrink-0" />
               <input
@@ -590,15 +554,11 @@ export default function AppShell() {
                   }
                 }}
               />
-              <button
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-2 text-white/40 hover:text-white cursor-pointer"
-                onClick={() => { setMobileSearchOpen(false); }}
-              >
+              <button className="rounded-2xl border border-white/10 bg-white/[0.03] p-2 text-white/40 hover:text-white cursor-pointer" onClick={() => { setMobileSearchOpen(false); }}>
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Mobile suggestions */}
             <div className="flex-1 overflow-y-auto">
               {suggestionsLoading && suggestions.length === 0 && query.trim().length >= 2 ? (
                 <div className="px-4 py-12 text-center">
@@ -654,10 +614,7 @@ export default function AppShell() {
                 <div>
                   <div className="flex items-center justify-between px-4 pt-4 pb-2">
                     <span className="text-[11px] font-semibold text-white/30 uppercase tracking-wider">Recent</span>
-                    <button
-                      className="text-[11px] text-white/20 hover:text-[#E50914] cursor-pointer"
-                      onClick={() => clearAllRecentSearches()}
-                    >
+                    <button className="text-[11px] text-white/20 hover:text-[#E50914] cursor-pointer" onClick={() => clearAllRecentSearches()}>
                       Clear All
                     </button>
                   </div>
@@ -682,7 +639,6 @@ export default function AppShell() {
         )}
       </AnimatePresence>
 
-      {/* ── Main Content ───────────────────────────────────────────── */}
       <main className={isDiscover ? "mobile-content-shell relative z-10" : "mobile-content-shell relative z-10 mx-auto max-w-[1480px] px-3 sm:px-4 md:px-6 pb-20 md:pb-8 pt-12 sm:pt-16 md:pt-20"}>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
@@ -698,13 +654,12 @@ export default function AppShell() {
         </AnimatePresence>
       </main>
 
-      {/* ── Mobile Bottom Nav ──────────────────────────────────────── */}
       <nav className="mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] bg-[#0b0f15]/95 backdrop-blur-xl" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.35rem)' }}>
         <div className="flex items-center justify-between gap-1 px-1.5 pt-2 pb-1">
           {MOBILE_NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink
-                key={`${activeUserKey}-${to}`}
-                to={withUserRoot(to)}
+              key={`${activeUserKey}-${to}`}
+              to={withUserRoot(to)}
               end={end}
               className={({ isActive }) =>
                 `flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-wider transition-all active:scale-[0.96] ${
