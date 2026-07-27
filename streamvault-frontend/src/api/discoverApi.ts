@@ -859,7 +859,9 @@ class DiscoverAPI {
     } catch {
       // Fall through to resilient fallback.
     }
-    return this.getPopular('anime', page);
+    const topRated = await this.getTopRated('anime', page);
+    if (topRated.length > 0) return topRated;
+    return this.getTrending('anime', page);
   }
 
   // Get upcoming anime releases (future/next-season titles)

@@ -466,14 +466,17 @@ export default function DiscoverPage() {
 
   const animeHubSections = useMemo(() => {
     const fallbackAnime = (popularAnime.length > 0 ? popularAnime : trendingContent.filter((item) => item.type === 'anime')).slice(0, 20);
+    const fallbackTopAnime = (topRatedContent.filter((item) => item.type === 'anime').length > 0
+      ? topRatedContent.filter((item) => item.type === 'anime')
+      : trendingContent.filter((item) => item.type === 'anime')).slice(0, 20);
 
     return {
       now: nowAiringAnime.length > 0 ? nowAiringAnime : fallbackAnime,
       upcoming: upcomingAnime.length > 0 ? upcomingAnime : fallbackAnime,
-      top: topRankedAnime.length > 0 ? topRankedAnime : fallbackAnime,
+      top: topRankedAnime.length > 0 ? topRankedAnime : fallbackTopAnime,
       popular: popularAnime.length > 0 ? popularAnime : fallbackAnime,
     };
-  }, [nowAiringAnime, upcomingAnime, topRankedAnime, popularAnime, trendingContent]);
+  }, [nowAiringAnime, upcomingAnime, topRankedAnime, popularAnime, topRatedContent, trendingContent]);
 
   return (
     <div className="discover-page page-shell min-h-screen bg-[#0F1014] pt-11 sm:pt-16 md:pt-20 pb-20 md:pb-8">
