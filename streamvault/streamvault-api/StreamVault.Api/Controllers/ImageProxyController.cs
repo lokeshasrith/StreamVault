@@ -26,6 +26,8 @@ public sealed class ImageProxyController : ControllerBase
         "myanimelist.net",
         "cdn.myanimelist.net",
         "cdn.jikan.moe",
+        "img.anili.st",
+        "s4.anilist.co",
         "img.youtube.com",
         "deadline.com",
         "variety.com",
