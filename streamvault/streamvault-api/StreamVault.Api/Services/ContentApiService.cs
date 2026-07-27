@@ -66,9 +66,12 @@ public class ContentApiService : IContentApiService
     private readonly string _tmdbApiKey;
     private readonly string _tmdbBaseUrl = "https://api.themoviedb.org/3";
     private readonly string _jikanBaseUrl = "https://api.jikan.moe/v4";
+    private readonly string _aniListBaseUrl = "https://graphql.anilist.co";
     private static readonly TimeSpan JikanCacheDuration = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan AniListCacheDuration = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan TmdbCacheDuration = TimeSpan.FromMinutes(5);
     private static readonly SemaphoreSlim _jikanThrottle = new(1, 1);
+    private static readonly SemaphoreSlim _aniListThrottle = new(1, 1);
     private static readonly SemaphoreSlim _tmdbThrottle = new(8, 8); // Max 8 concurrent TMDB requests
 
     private static readonly (string Title, int? Year)[] FallbackTrendingMovies =
@@ -294,6 +297,168 @@ public class ContentApiService : IContentApiService
         }
     }
 
+    private async Task<string> GetAniListCachedAsync(string cacheKey, object requestPayload)
+    {
+        var fullKey = $"anilist:{cacheKey}";
+        if (_cache.TryGetValue(fullKey, out string? cached) && cached != null)
+            return cached;
+
+        await _aniListThrottle.WaitAsync();
+        try
+        {
+            if (_cache.TryGetValue(fullKey, out cached) && cached != null)
+                return cached;
+
+            var payloadJson = JsonSerializer.Serialize(requestPayload);
+            using var req = new HttpRequestMessage(HttpMethod.Post, _aniListBaseUrl)
+            {
+                Content = new StringContent(payloadJson, System.Text.Encoding.UTF8, "application/json")
+            };
+            req.Headers.Accept.ParseAdd("application/json");
+
+            using var resp = await _httpClient.SendAsync(req);
+            resp.EnsureSuccessStatusCode();
+            var result = await resp.Content.ReadAsStringAsync();
+            _cache.Set(fullKey, result, AniListCacheDuration);
+            await Task.Delay(350);
+            return result;
+        }
+        finally
+        {
+            _aniListThrottle.Release();
+        }
+    }
+
+    private async Task<List<Content>> GetAniListAnimeAsync(int page, int perPage, string sort, string? status = null, string? search = null)
+    {
+        const string query = @"
+query ($page: Int, $perPage: Int, $search: String, $status: MediaStatus, $sort: [MediaSort], $type: MediaType) {
+  Page(page: $page, perPage: $perPage) {
+    media(search: $search, status: $status, sort: $sort, type: $type) {
+      id
+      idMal
+      title {
+        romaji
+        english
+        native
+      }
+      description(asHtml: false)
+      averageScore
+      episodes
+      seasonYear
+      coverImage {
+        extraLarge
+        large
+        medium
+      }
+      bannerImage
+      genres
+    }
+  }
+}";
+
+        var payload = new
+        {
+            query,
+            variables = new
+            {
+                page,
+                perPage,
+                search,
+                status,
+                sort = new[] { sort },
+                type = "ANIME"
+            }
+        };
+
+        var key = $"page={page}:perPage={perPage}:sort={sort}:status={status}:search={search}";
+        var json = await GetAniListCachedAsync(key, payload);
+        using var doc = JsonDocument.Parse(json);
+
+        if (!doc.RootElement.TryGetProperty("data", out var dataEl) ||
+            !dataEl.TryGetProperty("Page", out var pageEl) ||
+            !pageEl.TryGetProperty("media", out var mediaArr) ||
+            mediaArr.ValueKind != JsonValueKind.Array)
+        {
+            return new List<Content>();
+        }
+
+        var results = new List<Content>();
+        foreach (var media in mediaArr.EnumerateArray())
+        {
+            if (!media.TryGetProperty("idMal", out var idMalEl) || idMalEl.ValueKind != JsonValueKind.Number)
+                continue;
+
+            var idMal = idMalEl.GetInt32();
+            var title = "";
+            if (media.TryGetProperty("title", out var titleEl) && titleEl.ValueKind == JsonValueKind.Object)
+            {
+                title = titleEl.TryGetProperty("english", out var en) && en.ValueKind == JsonValueKind.String
+                    ? en.GetString() ?? ""
+                    : titleEl.TryGetProperty("romaji", out var ro) && ro.ValueKind == JsonValueKind.String
+                        ? ro.GetString() ?? ""
+                        : titleEl.TryGetProperty("native", out var na) && na.ValueKind == JsonValueKind.String
+                            ? na.GetString() ?? ""
+                            : "";
+            }
+
+            string? poster = null;
+            if (media.TryGetProperty("coverImage", out var coverEl) && coverEl.ValueKind == JsonValueKind.Object)
+            {
+                if (coverEl.TryGetProperty("extraLarge", out var xl) && xl.ValueKind == JsonValueKind.String)
+                    poster = xl.GetString();
+                else if (coverEl.TryGetProperty("large", out var lg) && lg.ValueKind == JsonValueKind.String)
+                    poster = lg.GetString();
+                else if (coverEl.TryGetProperty("medium", out var md) && md.ValueKind == JsonValueKind.String)
+                    poster = md.GetString();
+            }
+
+            var banner = media.TryGetProperty("bannerImage", out var bannerEl) && bannerEl.ValueKind == JsonValueKind.String
+                ? bannerEl.GetString()
+                : null;
+
+            var score = media.TryGetProperty("averageScore", out var scoreEl) && scoreEl.ValueKind == JsonValueKind.Number
+                ? scoreEl.GetInt32() / 10m
+                : (decimal?)null;
+
+            var episodes = media.TryGetProperty("episodes", out var epsEl) && epsEl.ValueKind == JsonValueKind.Number
+                ? epsEl.GetInt32()
+                : (int?)null;
+
+            var year = media.TryGetProperty("seasonYear", out var yearEl) && yearEl.ValueKind == JsonValueKind.Number
+                ? yearEl.GetInt32()
+                : (int?)null;
+
+            var synopsis = media.TryGetProperty("description", out var descEl) && descEl.ValueKind == JsonValueKind.String
+                ? descEl.GetString()
+                : null;
+
+            var genresCsv = media.TryGetProperty("genres", out var genresEl) && genresEl.ValueKind == JsonValueKind.Array
+                ? string.Join(",", genresEl.EnumerateArray().Where(g => g.ValueKind == JsonValueKind.String).Select(g => g.GetString()).Where(g => !string.IsNullOrWhiteSpace(g)))
+                : null;
+
+            results.Add(new Content
+            {
+                ExternalId = idMal.ToString(),
+                Source = "MAL_ANIME",
+                Type = ContentType.anime,
+                Title = title,
+                Year = year,
+                Episodes = episodes,
+                PosterUrl = poster,
+                BackdropUrl = banner ?? poster,
+                Rating = score,
+                Synopsis = synopsis,
+                GenresCsv = genresCsv
+            });
+        }
+
+        return results
+            .GroupBy(c => $"{c.Source}:{c.ExternalId}")
+            .Select(g => g.First())
+            .ToList();
+    }
+
     /// <summary>Throttled + cached TMDB GET to stay under the 40 req/10s rate limit.</summary>
     private async Task<string> GetTmdbCachedAsync(string url)
     {
@@ -371,13 +536,16 @@ public class ContentApiService : IContentApiService
             var url = $"{_jikanBaseUrl}/anime?q={Uri.EscapeDataString(cleanQuery)}&page={page}&limit=20";
             var response = await GetJikanCachedAsync(url);
             var jikanResponse = JsonSerializer.Deserialize<JikanSearchResponse>(response, JsonOptions());
-            
-            return jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
+
+            var jikanItems = jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
+            if (jikanItems.Count > 0) return jikanItems;
+
+            return await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC", search: cleanQuery);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error searching anime: {ex.Message}");
-            return new List<Content>();
+            return await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC", search: query);
         }
     }
 
@@ -604,13 +772,16 @@ public class ContentApiService : IContentApiService
             var url = $"{_jikanBaseUrl}/top/anime?page={page}&limit=20";
             var response = await GetJikanCachedAsync(url);
             var jikanResponse = JsonSerializer.Deserialize<JikanSearchResponse>(response, JsonOptions());
-            
-            return jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
+
+            var jikanItems = jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
+            if (jikanItems.Count > 0) return jikanItems;
+
+            return await GetAniListAnimeAsync(page, 20, "TRENDING_DESC");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting trending anime: {ex.Message}");
-            return new List<Content>();
+            return await GetAniListAnimeAsync(page, 20, "TRENDING_DESC");
         }
     }
 
@@ -622,12 +793,15 @@ public class ContentApiService : IContentApiService
             var response = await GetJikanCachedAsync(url);
             var jikanResponse = JsonSerializer.Deserialize<JikanSearchResponse>(response, JsonOptions());
 
-            return jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
+            var jikanItems = jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
+            if (jikanItems.Count > 0) return jikanItems;
+
+            return await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC", status: "RELEASING");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting now airing anime: {ex.Message}");
-            return new List<Content>();
+            return await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC", status: "RELEASING");
         }
     }
 
@@ -686,13 +860,16 @@ public class ContentApiService : IContentApiService
             var url = $"{_jikanBaseUrl}/top/anime?filter=bypopularity&page={page}&limit=20";
             var response = await GetJikanCachedAsync(url);
             var jikanResponse = JsonSerializer.Deserialize<JikanSearchResponse>(response, JsonOptions());
-            
-            return jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
+
+            var jikanItems = jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
+            if (jikanItems.Count > 0) return jikanItems;
+
+            return await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting popular anime: {ex.Message}");
-            return new List<Content>();
+            return await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC");
         }
     }
 
@@ -751,13 +928,16 @@ public class ContentApiService : IContentApiService
             var url = $"{_jikanBaseUrl}/top/anime?page={page}&limit=20";
             var response = await GetJikanCachedAsync(url);
             var jikanResponse = JsonSerializer.Deserialize<JikanSearchResponse>(response, JsonOptions());
-            
-            return jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
+
+            var jikanItems = jikanResponse?.Data?.Select(item => MapJikanAnimeToContent(item)).ToList() ?? new List<Content>();
+            if (jikanItems.Count > 0) return jikanItems;
+
+            return await GetAniListAnimeAsync(page, 20, "SCORE_DESC");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting top rated anime: {ex.Message}");
-            return new List<Content>();
+            return await GetAniListAnimeAsync(page, 20, "SCORE_DESC");
         }
     }
 
@@ -769,7 +949,7 @@ public class ContentApiService : IContentApiService
             var response = await GetJikanCachedAsync(url);
             var jikanResponse = JsonSerializer.Deserialize<JikanSearchResponse>(response, JsonOptions());
 
-            return jikanResponse?.Data?
+            var jikanItems = jikanResponse?.Data?
                 .Select(item =>
                 {
                     var mapped = MapJikanAnimeToContent(item);
@@ -779,11 +959,29 @@ public class ContentApiService : IContentApiService
                     return mapped;
                 })
                 .ToList() ?? new List<Content>();
+
+            if (jikanItems.Count > 0) return jikanItems;
+
+            var aniListItems = await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC", status: "NOT_YET_RELEASED");
+            foreach (var item in aniListItems)
+            {
+                item.GenresCsv = string.IsNullOrWhiteSpace(item.GenresCsv)
+                    ? "Upcoming"
+                    : $"{item.GenresCsv},Upcoming";
+            }
+            return aniListItems;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting upcoming anime: {ex.Message}");
-            return new List<Content>();
+            var aniListItems = await GetAniListAnimeAsync(page, 20, "POPULARITY_DESC", status: "NOT_YET_RELEASED");
+            foreach (var item in aniListItems)
+            {
+                item.GenresCsv = string.IsNullOrWhiteSpace(item.GenresCsv)
+                    ? "Upcoming"
+                    : $"{item.GenresCsv},Upcoming";
+            }
+            return aniListItems;
         }
     }
 
