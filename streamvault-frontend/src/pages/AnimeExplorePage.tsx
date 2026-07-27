@@ -260,13 +260,13 @@ export default function AnimeExplorePage() {
               )}
 
               {filteredItems.length > 0 ? (
-                <div className="pt-1 sm:pt-2">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3.5 gap-y-4.5 sm:gap-x-4.5 sm:gap-y-5.5 lg:gap-x-5.5 lg:gap-y-6">
+                <div className="pt-2 sm:pt-3">
+                  <div className="grid justify-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-5 gap-y-7 sm:gap-x-6 sm:gap-y-8 lg:gap-x-7 lg:gap-y-10">
                   {filteredItems.map((content) => (
                     <ContentCard
                       key={`anime-explorer-${content.source}-${content.externalId}`}
                       content={content}
-                      size="medium"
+                      size="large"
                       onClick={handleContentClick}
                       onAddToLibrary={handleAddToLibrary}
                     />
