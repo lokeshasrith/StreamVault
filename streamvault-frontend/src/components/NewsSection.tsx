@@ -55,6 +55,20 @@ function formatPublishedAgo(isoDate?: string): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+function groupByCategory(items: NewsItem[]): Array<{ category: string; items: NewsItem[] }> {
+  const grouped = new Map<string, NewsItem[]>();
+  for (const item of items) {
+    const key = item.category || 'Entertainment';
+    const bucket = grouped.get(key) ?? [];
+    bucket.push(item);
+    grouped.set(key, bucket);
+  }
+
+  return [...grouped.entries()]
+    .map(([category, groupedItems]) => ({ category, items: groupedItems }))
+    .sort((a, b) => b.items.length - a.items.length);
+}
+
 /* ─── Racing Ticker ─────────────────────────────────────────────────────── */
 function RacingTicker({ items }: { items: NewsItem[] }) {
   return (
@@ -253,6 +267,86 @@ function NewsCard({ item }: { item: NewsItem }) {
   );
 }
 
+function HeadlineCard({ item, index }: { item: NewsItem; index: number }) {
+  const cat = getCat(item.category ?? 'Entertainment');
+  const CatIcon = cat.icon;
+
+  return (
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group rounded-[22px] border border-white/[0.06] bg-[linear-gradient(180deg,rgba(22,25,31,0.96),rgba(15,17,22,0.96))] p-4 transition-all duration-300 hover:-translate-y-1 hover:border-white/12"
+    >
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/72">
+          <CatIcon className="h-3 w-3" style={{ color: cat.accent }} />
+          {item.category}
+        </span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/38">0{index + 1}</span>
+      </div>
+      <h3 className="line-clamp-3 text-base font-semibold leading-snug text-[#F7F1E8] transition-colors group-hover:text-white">
+        {item.title}
+      </h3>
+      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-white/36 transition-colors group-hover:text-white/52">
+        {item.snippet}
+      </p>
+      <div className="mt-4 flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.16em] text-white/28">
+        <span>{item.source}</span>
+        <span className="inline-flex items-center gap-1 text-white/44 group-hover:text-white/62">
+          {formatPublishedAgo(item.publishedAt)} <ExternalLink className="h-3 w-3" />
+        </span>
+      </div>
+    </a>
+  );
+}
+
+function CategoryShelf({ category, items }: { category: string; items: NewsItem[] }) {
+  const cat = getCat(category);
+  const CatIcon = cat.icon;
+
+  return (
+    <div className="rounded-[24px] border border-white/[0.06] bg-[linear-gradient(180deg,rgba(16,19,25,0.96),rgba(12,14,19,0.96))] p-4 sm:p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <span className="premium-kicker">Category Focus</span>
+          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold text-[#F7F1E8]">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+              <CatIcon className="h-4 w-4" style={{ color: cat.accent }} />
+            </span>
+            {category}
+          </h3>
+        </div>
+        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/48">
+          {items.length} stories
+        </span>
+      </div>
+
+      <div className="space-y-3">
+        {items.slice(0, 3).map((item) => (
+          <a
+            key={item.url}
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block rounded-[18px] border border-white/[0.05] bg-white/[0.03] p-3.5 transition-all duration-300 hover:border-white/10 hover:bg-white/[0.05]"
+          >
+            <h4 className="line-clamp-2 text-sm font-semibold leading-snug text-[#F7F1E8] group-hover:text-white">
+              {item.title}
+            </h4>
+            <div className="mt-2 flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.16em] text-white/28">
+              <span>{item.source}</span>
+              <span className="inline-flex items-center gap-1 text-white/42 group-hover:text-white/60">
+                Read <ExternalLink className="h-3 w-3" />
+              </span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main NewsSection ──────────────────────────────────────────────────── */
 export default function NewsSection({ news, isLoading }: { news: NewsItem[]; isLoading: boolean }) {
   const validNews = news.filter((item): item is NewsItem => Boolean(item?.url && item?.title));
@@ -262,15 +356,22 @@ export default function NewsSection({ news, isLoading }: { news: NewsItem[]; isL
     return tb - ta;
   });
   const spotlightItems = sortedNews.slice(0, 5);
-  const gridItems = sortedNews.slice(5);
+  const headlineItems = sortedNews.slice(1, 5);
+  const featureItems = sortedNews.slice(5, 11);
+  const categoryShelves = groupByCategory(sortedNews.slice(6)).slice(0, 3);
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="h-10 shimmer rounded" />
-        <div className="h-[300px] shimmer rounded-xl" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-64 shimmer rounded-lg" />)}
+      <div className="premium-panel space-y-6 px-4 py-5 sm:px-6 sm:py-6">
+        <div className="h-10 shimmer rounded-2xl" />
+        <div className="h-[320px] shimmer rounded-[28px]" />
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-2">
+            {[...Array(4)].map((_, i) => <div key={i} className="h-64 shimmer rounded-[24px]" />)}
+          </div>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => <div key={i} className="h-40 shimmer rounded-[24px]" />)}
+          </div>
         </div>
       </div>
     );
@@ -279,39 +380,64 @@ export default function NewsSection({ news, isLoading }: { news: NewsItem[]; isL
   if (validNews.length === 0) return null;
 
   return (
-    <div className="space-y-6 news-section">
-      <RacingTicker items={validNews.slice(0, 10)} />
-
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="relative p-2.5 rounded-lg bg-[#0F1014] border border-white/10">
-              <Newspaper className="w-5 h-5 text-white" />
+    <section className="news-section max-w-6xl mx-auto premium-panel px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8 space-y-6 sm:space-y-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-2xl">
+          <span className="premium-kicker">Editorial Feed</span>
+          <div className="mt-3 flex items-center gap-3">
+            <div className="relative rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3">
+              <Newspaper className="w-5 h-5 text-[#F7F1E8]" />
             </div>
-          </div>
-          <div>
-            <h2 className="section-heading text-lg sm:text-2xl text-white tracking-tight flex items-center gap-2">
-              Entertainment News
-              <span className="rounded-[10px] border border-red-500/20 bg-red-600/20 px-2 py-0.5 text-[10px] font-black text-red-400">Live</span>
-            </h2>
-            <p className="text-[11px] text-white/30 tracking-wide">Movies • TV • Anime • Streaming</p>
+            <div>
+              <h2 className="section-heading text-xl sm:text-3xl text-[#F7F1E8] tracking-tight">
+                Entertainment Dispatch
+              </h2>
+              <p className="mt-1 text-sm text-[#98A2B3]">
+                A sharper editorial mix of anime, movies, TV, streaming, and India-focused coverage.
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="rounded-[10px] border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/55 sm:text-xs">
-          Unified Feed
+        <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-white/46 sm:text-xs">
+          <span className="rounded-full border border-[#ff6b3d]/18 bg-[#ff6b3d]/12 px-3 py-1 font-bold text-[#FFD48C]">Live Wire</span>
+          <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 font-bold">Anime</span>
+          <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 font-bold">Movies</span>
+          <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 font-bold">Streaming</span>
         </div>
       </div>
 
-      {spotlightItems.length > 0 && <HeroSpotlight items={spotlightItems} />}
+      <RacingTicker items={validNews.slice(0, 10)} />
 
-      {gridItems.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-          {gridItems.map((item) => <NewsCard key={item.url} item={item} />)}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.8fr)] xl:gap-5">
+        {spotlightItems.length > 0 && <HeroSpotlight items={spotlightItems} />}
+
+        <div className="space-y-4">
+          {headlineItems.map((item, index) => (
+            <HeadlineCard key={item.url} item={item} index={index} />
+          ))}
         </div>
-      )}
+      </div>
 
-      <div className="flex items-center gap-3 flex-wrap pt-1">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.82fr)]">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-white/48">Feature Stack</h3>
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30">{featureItems.length} stories</span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {featureItems.map((item) => <NewsCard key={item.url} item={item} />)}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {categoryShelves.map((group) => (
+            <CategoryShelf key={group.category} category={group.category} items={group.items} />
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 flex-wrap pt-2">
         <TrendingUp className="w-4 h-4 text-white/20" />
         <span className="text-[10px] text-white/20 font-bold uppercase tracking-[0.15em]">Hot Topics</span>
         {['Marvel', 'Netflix', 'Anime2026', 'BoxOffice', 'Bollywood', 'Disney+'].map(tag => (
@@ -321,6 +447,6 @@ export default function NewsSection({ news, isLoading }: { news: NewsItem[]; isL
           </span>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
