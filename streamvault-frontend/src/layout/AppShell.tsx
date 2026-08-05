@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink, Outlet, useNavigate, useSearchParams, useLocation, useParams, Navigate } from "react-router-dom";
 import { Search, LogOut, Compass, Bookmark, Eye, CheckCircle, XCircle, PauseCircle, Activity, Film, Tv, Sparkles, Star, X, Clock, Trash2, Menu, Library, Heart, Download } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { useAuth } from "../auth/AuthContext";
 import { discoverApi, type ContentItem, getImageUrl, formatRating, getContentTypeLabel, formatYear, PLACEHOLDER_POSTER } from "../api/discoverApi";
 import StreamVaultLogo from "../components/StreamVaultLogo";
@@ -29,6 +29,22 @@ const MOBILE_NAV = [
 ];
 
 const TYPE_ICON: Record<string, React.ElementType> = { movie: Film, tv: Tv, anime: Sparkles };
+
+const mobileMenuVariants: Variants = {
+  hidden: { opacity: 0, y: -16, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1], staggerChildren: 0.035, delayChildren: 0.03 },
+  },
+  exit: { opacity: 0, y: -12, scale: 0.985, transition: { duration: 0.16 } },
+};
+
+const mobileMenuItemVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } },
+};
 
 export default function AppShell() {
   const { logout, userKey } = useAuth();
@@ -257,18 +273,22 @@ export default function AppShell() {
 
   return (
     <div className="app-shell-bg min-h-screen overflow-x-hidden text-[#F4EFE6]">
-      <header className="mobile-top-header fixed top-0 left-0 right-0 z-50 px-1.5 pt-1.5 sm:px-4 sm:pt-3 md:px-6">
-        <div className="app-header-shell mx-auto max-w-[1580px] premium-panel nav-sheen px-2.5 py-2.5 sm:px-4 md:px-5 md:py-3 overflow-visible">
+      <header className="mobile-top-header fixed top-0 left-0 right-0 z-50 px-1 pt-1 sm:px-4 sm:pt-3 md:px-6">
+        <div className="app-header-shell mx-auto max-w-[1580px] premium-panel nav-sheen overflow-visible px-2 py-2 sm:px-4 md:px-5 md:py-3">
           <div className="flex items-center gap-2 sm:gap-4 md:hidden">
-            <button onClick={() => { setQuery(""); nav(withUserRoot("/")); }} className="flex items-center gap-2 flex-shrink-0 cursor-pointer group">
-              <StreamVaultLogo size={40} compact />
+            <button onClick={() => { setQuery(""); nav(withUserRoot("/")); }} className="group flex flex-shrink-0 items-center gap-2 rounded-[18px] border border-white/8 bg-white/[0.02] px-2.5 py-1.5 cursor-pointer">
+              <StreamVaultLogo size={34} compact />
+              <div className="flex flex-col items-start">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.26em] text-[#FFD48C]/72">StreamVault</span>
+                <span className="text-[11px] text-white/50">Pocket Picks</span>
+              </div>
             </button>
             <div className="flex-1" />
-            <button className="app-header-action md:hidden" onClick={() => setMobileSearchOpen(true)}>
-              <Search className="w-5 h-5" />
+            <button className="app-header-action md:hidden" onClick={() => { setMobileMenuOpen(false); setMobileSearchOpen(true); }}>
+              <Search className="h-[1.125rem] w-[1.125rem]" />
             </button>
-            <button className="app-header-action md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              <Menu className="w-5 h-5" />
+            <button className="app-header-action md:hidden" onClick={() => { setMobileSearchOpen(false); setMobileMenuOpen((prev) => !prev); }}>
+              <Menu className="h-[1.125rem] w-[1.125rem]" />
             </button>
           </div>
 
@@ -460,47 +480,50 @@ export default function AppShell() {
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="mx-auto mt-1.5 w-[calc(100%-0.75rem)] max-w-[1480px] overflow-hidden premium-panel md:hidden"
+              variants={mobileMenuVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="mx-auto mt-1.5 w-[calc(100%-0.5rem)] max-w-[1480px] overflow-hidden premium-panel md:hidden"
             >
-              <div className="mobile-menu-sheet px-4 py-3 space-y-1">
+              <div className="mobile-menu-sheet space-y-1.5 px-3 py-3">
                 {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
-                  <NavLink
-                    key={`${activeUserKey}-mobile-${to}`}
-                    to={withUserRoot(to)}
-                    end={end}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `mobile-nav-link flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-semibold uppercase tracking-[0.12em] transition-all ${
-                        isActive
-                          ? "text-white bg-[linear-gradient(135deg,rgba(255,197,98,0.18),rgba(255,107,61,0.12))] border border-[#ffc562]/20"
-                          : "text-[#9ca4b2] bg-white/[0.02]"
-                      }`
-                    }
-                  >
-                    <Icon className="w-4 h-4" />
-                    {label}
-                  </NavLink>
+                  <motion.div key={`${activeUserKey}-mobile-${to}`} variants={mobileMenuItemVariants}>
+                    <NavLink
+                      to={withUserRoot(to)}
+                      end={end}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `mobile-nav-link flex items-center gap-3 rounded-[20px] px-3 py-3 text-sm font-semibold uppercase tracking-[0.12em] transition-all ${
+                          isActive
+                            ? "border border-[#ffc562]/20 bg-[linear-gradient(135deg,rgba(255,197,98,0.2),rgba(255,107,61,0.14))] text-white shadow-[0_12px_30px_rgba(255,149,87,0.14)]"
+                            : "border border-white/[0.04] bg-white/[0.02] text-[#c0c7d4]"
+                        }`
+                      }
+                    >
+                      <Icon className="w-4 h-4" />
+                      {label}
+                    </NavLink>
+                  </motion.div>
                 ))}
-                <button
+                <motion.button
+                  variants={mobileMenuItemVariants}
                   onClick={() => { logout(); nav("/auth"); setMobileMenuOpen(false); }}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-semibold uppercase tracking-[0.12em] text-[#ff9a67] bg-white/[0.02] cursor-pointer"
+                  className="w-full flex items-center gap-3 rounded-[20px] border border-white/[0.04] bg-white/[0.02] px-3 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-[#ff9a67] cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
-                </button>
+                </motion.button>
 
                 {!isStandalone && (installPrompt || isIos) && !installHintDismissed && (
-                  <button
+                  <motion.button
+                    variants={mobileMenuItemVariants}
                     onClick={() => { void handleAddToHomeScreen(); setMobileMenuOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-semibold uppercase tracking-[0.12em] text-[#7dd3fc] bg-[#5ad3ff]/[0.08] border border-[#5ad3ff]/20 cursor-pointer"
+                    className="w-full flex items-center gap-3 rounded-[20px] border border-[#5ad3ff]/20 bg-[#5ad3ff]/[0.08] px-3 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-[#7dd3fc] cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
                     Add to Home Screen
-                  </button>
+                  </motion.button>
                 )}
               </div>
             </motion.div>
@@ -537,13 +560,20 @@ export default function AppShell() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-[#05070b]/98 md:hidden flex flex-col"
+            className="fixed inset-0 z-[60] bg-[#05070b]/92 backdrop-blur-md md:hidden"
           >
-            <div className="mobile-search-header flex items-center gap-2.5 border-b border-white/[0.06] px-3 py-3">
-              <Search className="w-5 h-5 text-[#5AD3FF]/70 flex-shrink-0" />
+            <motion.div
+              initial={{ opacity: 0, y: 28, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.985 }}
+              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+              className="mx-2 mt-2 flex h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(10,13,19,0.98)_0%,rgba(6,8,13,0.96)_100%)] shadow-[0_28px_60px_rgba(0,0,0,0.34)]"
+            >
+            <div className="mobile-search-header flex items-center gap-2 border-b border-white/[0.06] px-3 py-3">
+              <Search className="w-4 h-4 text-[#5AD3FF]/70 flex-shrink-0" />
               <input
                 autoFocus
-                className="flex-1 bg-transparent text-base text-white placeholder:text-white/24 focus:outline-none"
+                className="flex-1 bg-transparent text-[0.95rem] text-white placeholder:text-white/24 focus:outline-none"
                 placeholder="Search movies, shows, anime…"
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); committedQuery.current = ""; }}
@@ -555,11 +585,11 @@ export default function AppShell() {
                 }}
               />
               <button className="rounded-2xl border border-white/10 bg-white/[0.03] p-2 text-white/40 hover:text-white cursor-pointer" onClick={() => { setMobileSearchOpen(false); }}>
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto px-1 pb-3">
               {suggestionsLoading && suggestions.length === 0 && query.trim().length >= 2 ? (
                 <div className="px-4 py-12 text-center">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white/40 mx-auto mb-3" />
@@ -573,7 +603,7 @@ export default function AppShell() {
                     return (
                       <button
                         key={`${item.source}-${item.externalId}`}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors cursor-pointer"
+                        className="mx-2 my-1 flex w-[calc(100%-1rem)] items-center gap-3 rounded-[22px] border border-white/[0.05] bg-white/[0.02] px-3 py-3 text-left transition-colors cursor-pointer hover:bg-white/5"
                         onClick={() => { goToContent(item); setMobileSearchOpen(false); }}
                       >
                         <div className="w-10 h-14 rounded overflow-hidden flex-shrink-0 bg-white/5">
@@ -604,7 +634,7 @@ export default function AppShell() {
                     );
                   })}
                   <button
-                    className="w-full px-4 py-3 text-center text-sm text-white/40 border-t border-white/[0.06] cursor-pointer"
+                    className="mx-2 mt-2 w-[calc(100%-1rem)] rounded-[20px] border border-white/[0.06] px-4 py-3 text-center text-sm text-white/40 cursor-pointer"
                     onClick={() => { commitSearch(query); setMobileSearchOpen(false); }}
                   >
                     View all results for &ldquo;{query}&rdquo;
@@ -621,7 +651,7 @@ export default function AppShell() {
                   {recentSearches.map((term) => (
                     <button
                       key={term}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-white/5 transition-colors cursor-pointer"
+                      className="mx-2 my-1 flex w-[calc(100%-1rem)] items-center gap-3 rounded-[20px] border border-white/[0.05] bg-white/[0.02] px-3 py-3 text-left transition-colors cursor-pointer hover:bg-white/5"
                       onClick={() => { setQuery(term); commitSearch(term); setMobileSearchOpen(false); }}
                     >
                       <Clock className="w-4 h-4 text-white/20 flex-shrink-0" />
@@ -635,6 +665,7 @@ export default function AppShell() {
                 </div>
               ) : null}
             </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -654,28 +685,28 @@ export default function AppShell() {
         </AnimatePresence>
       </main>
 
-      <nav className="mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] bg-[#0b0f15]/95 backdrop-blur-xl" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.35rem)' }}>
-        <div className="flex items-center justify-between gap-1 px-1.5 pt-2 pb-1">
+      <nav className="mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-50 px-2 pb-2" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.45rem)' }}>
+        <div className="mx-auto flex max-w-[32rem] items-center justify-between gap-1 rounded-[24px] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(11,15,21,0.94),rgba(8,11,16,0.92))] px-1.5 pt-1.5 pb-1.5 shadow-[0_-10px_32px_rgba(0,0,0,0.26)] backdrop-blur-xl">
           {MOBILE_NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={`${activeUserKey}-${to}`}
               to={withUserRoot(to)}
               end={end}
               className={({ isActive }) =>
-                `flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-wider transition-all active:scale-[0.96] ${
-                  isActive ? "text-[#ffc562] bg-[#ffc562]/8 border border-[#ffc562]/18" : "text-[#6b7280] border border-transparent"
+                `flex-1 min-w-0 flex flex-col items-center gap-1 rounded-[18px] px-1 py-2 text-[9px] font-semibold uppercase tracking-[0.14em] transition-all active:scale-[0.96] ${
+                  isActive ? "text-[#fff0cf] bg-[linear-gradient(135deg,rgba(255,197,98,0.18),rgba(255,107,61,0.1))] border border-[#ffc562]/18" : "text-[#9ca3af] border border-transparent"
                 }`
               }
             >
-              <Icon className="w-5 h-5" />
+              <Icon className="h-[1.05rem] w-[1.05rem]" />
               <span className="max-w-full truncate">{label}</span>
             </NavLink>
           ))}
           <button
             onClick={() => { logout(); nav("/auth"); }}
-            className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] border border-transparent active:scale-[0.96] cursor-pointer"
+            className="flex-1 min-w-0 flex flex-col items-center gap-1 rounded-[18px] px-1 py-2 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#9ca3af] border border-transparent active:scale-[0.96] cursor-pointer"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="h-[1.05rem] w-[1.05rem]" />
             <span className="max-w-full truncate">Logout</span>
           </button>
         </div>

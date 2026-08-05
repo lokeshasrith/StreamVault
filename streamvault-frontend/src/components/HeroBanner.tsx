@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { Play, Plus, Info, Star, Calendar, Clock, ChevronLeft, ChevronRight, Eye, Check, Pause, X } from "lucide-react";
 import type { ContentItem } from "../api/discoverApi";
 import { 
-  getImageUrl, 
-  formatRating, 
-  formatGenres, 
+  getImageUrl,
+  formatRating,
+  formatGenres,
   getContentTypeLabel,
   formatYear,
-  truncateText 
-} from "../api/discoverApi";
+  truncateText,
+} from "../utils/media";
 
 interface HeroBannerProps {
   contents: ContentItem[];
@@ -175,8 +176,16 @@ export default function HeroBanner({
       {/* Content */}
       <div className="relative z-10 h-full flex items-center">
         <div className="mx-auto w-full max-w-[1480px] px-4 sm:px-7 lg:px-8">
-          <div className="max-w-md sm:max-w-xl lg:max-w-[42rem] px-0 py-4 sm:px-3 sm:py-6 md:px-0 md:py-7">
-            <div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${currentContent.source}-${currentContent.externalId}`}
+              initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -16, filter: "blur(6px)" }}
+              transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-md px-0 py-4 sm:max-w-xl sm:px-3 sm:py-6 lg:max-w-[42rem] md:px-0 md:py-7"
+            >
+              <div>
               <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
                 <span className="premium-kicker">Tonight's Drop</span>
                 <span className="premium-chip border-[#5ad3ff]/20 bg-[#091019]/72 text-[#dcf7ff]">
@@ -295,8 +304,9 @@ export default function HeroBanner({
                   </button>
                 )}
               </div>
-            </div>
-          </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
 

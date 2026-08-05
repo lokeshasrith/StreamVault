@@ -631,7 +631,7 @@ export default function DiscoverPage() {
           <div className="text-center">
             {!searchQuery && (
               <>
-                <div className="mx-auto mb-3 max-w-6xl premium-panel px-3 py-3 sm:mb-6 sm:px-6 sm:py-5">
+                <div className="mx-auto mb-3 max-w-6xl premium-panel micro-interactive micro-glow px-3 py-3 sm:mb-6 sm:px-6 sm:py-5">
                   <div className="flex flex-col items-center justify-center gap-2 sm:gap-4">
                     <span className="premium-kicker">Curated Daily</span>
                     <h1 className="section-heading text-[1.95rem] sm:text-5xl md:text-6xl text-[#F7F1E8]">
@@ -648,7 +648,7 @@ export default function DiscoverPage() {
 
                 {/* Content Type Filter */}
                 <div className="max-w-5xl mx-auto">
-                  <div className="premium-panel p-3.5 sm:p-5 lg:p-6 space-y-3 sm:space-y-4 overflow-hidden">
+                  <div className="premium-panel micro-interactive p-3.5 sm:p-5 lg:p-6 space-y-3 sm:space-y-4 overflow-hidden">
                     <div className="scrollbar-soft flex gap-1.5 sm:gap-2 overflow-x-auto flex-nowrap sm:flex-wrap justify-start sm:justify-center pb-2">
                       {(['all', 'movie', 'tv', 'anime'] as ContentType[]).map((type) => (
                         <button
@@ -821,7 +821,7 @@ export default function DiscoverPage() {
           )}
 
           {!searchQuery && likedRecommendationSeed.length > 0 && (
-            <div className="max-w-6xl mx-auto premium-panel px-4 py-4 sm:px-6 sm:py-5">
+            <div className="max-w-6xl mx-auto premium-panel micro-interactive px-4 py-4 sm:px-6 sm:py-5">
               <h3 className="text-sm sm:text-base font-semibold text-[#F7F1E8] flex items-center gap-2 mb-3">
                 <Heart className="w-4 h-4 text-pink-400" /> Recommendation Seeds (From Liked)
               </h3>
@@ -897,7 +897,7 @@ export default function DiscoverPage() {
           {/* Content Carousels */}
           {!searchQuery && !selectedGenre && (
             <>
-              <div className="max-w-6xl mx-auto premium-panel px-4 py-4 sm:px-6 sm:py-6 space-y-4">
+              <div className="max-w-6xl mx-auto premium-panel micro-interactive micro-glow px-4 py-4 sm:px-6 sm:py-6 space-y-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <span className="premium-kicker">Jikan Powered</span>
@@ -1036,7 +1036,7 @@ export default function DiscoverPage() {
               </div>
 
               {!isAnimeExplorerPage && (
-              <div>
+              <div className="micro-interactive rounded-[26px]">
                 <MultiContentCarousel
                   sections={priorityCarouselSections}
                   size="medium"
@@ -1049,11 +1049,13 @@ export default function DiscoverPage() {
 
               {/* Entertainment News Section */}
               {!isAnimeExplorerPage && (loadingStates.news || newsItems.length > 0) && (
-                <NewsSection news={newsItems} isLoading={loadingStates.news} />
+                <div className="micro-interactive rounded-[26px]">
+                  <NewsSection news={newsItems} isLoading={loadingStates.news} />
+                </div>
               )}
 
               {!isAnimeExplorerPage && (
-              <div>
+              <div className="micro-interactive rounded-[26px]">
                 <MultiContentCarousel
                   sections={secondaryCarouselSections}
                   size="medium"
@@ -1067,7 +1069,7 @@ export default function DiscoverPage() {
 
           {/* Genre Browse Section */}
           {!isAnimeExplorerPage && !searchQuery && !selectedGenre && !loadingStates.genres && (
-            <div id="discover-genre-grid" className="max-w-6xl mx-auto premium-panel px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+            <div id="discover-genre-grid" className="max-w-6xl mx-auto premium-panel micro-interactive px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
               <h2 className="section-heading text-xl sm:text-4xl text-[#F7F1E8] mb-5 sm:mb-7 tracking-tight flex items-center gap-3">
                 <Filter className="w-5 h-5 text-[#FFD48C]" />
                 Browse by Genre

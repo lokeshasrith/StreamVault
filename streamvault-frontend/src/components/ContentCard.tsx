@@ -1,16 +1,16 @@
 import { useState, memo } from "react";
 import { Star, Play, Plus, Check, Trash2, Eye, Pause, X, Bookmark } from "lucide-react";
 import type { ContentItem } from "../api/discoverApi";
-import { 
-  getImageUrl, 
-  formatRating, 
-  formatGenres, 
+import {
+  getImageUrl,
+  formatRating,
+  formatGenres,
   getContentTypeLabel,
-  formatYear, 
+  formatYear,
   formatEpisodes,
   truncateText,
-  PLACEHOLDER_POSTER 
-} from "../api/discoverApi";
+  PLACEHOLDER_POSTER,
+} from "../utils/media";
 
 interface ContentCardProps {
   content: ContentItem;

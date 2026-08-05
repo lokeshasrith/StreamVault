@@ -25,7 +25,8 @@ import {
   Building2,
   BookOpenText,
   CalendarRange,
-  MessageSquareText
+  MessageSquareText,
+  Sparkles
 } from 'lucide-react';
 import { discoverApi, type ContentDetails, type ExternalRatings, type WatchProviders, type SimilarItem, type ContentType, type NewsItem, type AnimeReviewItem, getImageUrl } from '../api/discoverApi';
 import { useAuth } from '../auth/AuthContext';
@@ -94,6 +95,22 @@ function getInitials(name: string): string {
   if (parts.length === 0) return '?';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
+}
+
+function SectionTitle({ icon: Icon, title }: { icon?: React.ElementType; title: string }) {
+  return (
+    <div className="mb-4 flex items-center gap-3 sm:mb-8">
+      {Icon ? (
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.03] text-[#FFD48C] shadow-[0_12px_28px_rgba(0,0,0,0.2)] sm:h-11 sm:w-11">
+          <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+        </span>
+      ) : null}
+      <div>
+        <p className="premium-kicker">Deep Dive</p>
+        <h2 className="section-heading text-[1.15rem] text-[#FFF7EA] sm:text-2xl md:text-3xl">{title}</h2>
+      </div>
+    </div>
+  );
 }
 
 export default function ContentDetailsPage() {
@@ -353,10 +370,10 @@ export default function ContentDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-[#0F1014] px-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#808080] mx-auto mb-4"></div>
-          <p className="text-[#808080] text-xl">Loading content details...</p>
+          <div className="mx-auto mb-4 h-14 w-14 animate-spin rounded-full border-b-2 border-[#FFC562]"></div>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#FFD48C]/72">Loading Details</p>
         </div>
       </div>
     );
@@ -364,12 +381,13 @@ export default function ContentDetailsPage() {
 
   if (!content) {
     return (
-      <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-[#E5E5E5] mb-4">Content not found</h2>
+      <div className="flex min-h-screen items-center justify-center bg-[#0F1014] px-4">
+        <div className="premium-panel max-w-lg p-8 text-center">
+          <p className="premium-kicker justify-center">Missing Title</p>
+          <h2 className="mt-3 text-2xl font-bold text-[#E5E5E5] mb-4">Content not found</h2>
           <button
             onClick={handleBack}
-            className="px-6 py-3 rounded-md bg-white text-black font-medium hover:bg-white/90 transition-colors flex items-center gap-2"
+            className="premium-button-secondary inline-flex items-center gap-2 px-6 py-3 text-sm font-medium"
           >
             <ArrowLeft className="w-4 h-4" />
             Go Back
@@ -407,10 +425,10 @@ export default function ContentDetailsPage() {
         {/* Back Button */}
         <button
           onClick={handleBack}
-          className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-md border border-[#2A2D35] bg-[#16181D]/80 px-2.5 py-2 transition-all hover:bg-[#16181D] cursor-pointer sm:top-8 sm:left-8 sm:px-4 sm:py-2.5"
+          className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-full border border-white/10 bg-[#0d1118]/78 px-3 py-2 text-[#F4EFE6] shadow-[0_12px_32px_rgba(0,0,0,0.26)] backdrop-blur-sm transition-all hover:bg-[#16181D] cursor-pointer sm:top-8 sm:left-8 sm:px-4 sm:py-2.5"
         >
-          <ArrowLeft className="w-5 h-5 text-white" />
-          <span className="hidden text-sm font-medium text-white sm:inline">Back</span>
+          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <span className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-white/82 sm:inline">Back</span>
         </button>
 
         {/* Content Info */}
@@ -435,7 +453,7 @@ export default function ContentDetailsPage() {
 
               {/* Info */}
               <div className="space-y-6 lg:col-span-9 lg:max-w-4xl">
-                <div className="p-2 sm:p-5 md:p-7 lg:p-8">
+                <div className="details-hero-panel p-3 sm:p-5 md:p-7 lg:p-8">
                   <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -446,10 +464,18 @@ export default function ContentDetailsPage() {
                         <img
                           src={getImageUrl(content.posterPath || content.backdropPath, 'medium')}
                           alt={content.title}
-                          className="h-44 w-30 rounded-xl border border-white/10 object-cover shadow-[0_14px_34px_rgba(0,0,0,0.45)]"
+                          className="h-40 w-28 rounded-[22px] border border-white/10 object-cover shadow-[0_14px_34px_rgba(0,0,0,0.45)]"
                         />
                       </div>
                     )}
+
+                    <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
+                      <span className="premium-kicker">Spotlight Title</span>
+                      <span className="premium-chip border-[#5ad3ff]/20 bg-[#091019]/72 text-[#dcf7ff]">{type?.toUpperCase()}</span>
+                      {content.tagline && (
+                        <span className="premium-chip border-white/10 bg-white/[0.04] text-white/64">Featured Entry</span>
+                      )}
+                    </div>
 
                     <h1 className="font-display text-[1.85rem] sm:text-3xl md:text-4xl lg:text-5xl xl:text-[3.5rem] font-bold text-white leading-[1.04] mb-3 sm:mb-4 md:mb-6 break-words">
                       {content.title}
@@ -462,52 +488,48 @@ export default function ContentDetailsPage() {
                     )}
 
                     {/* Meta Info */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-x-5 sm:gap-y-3 md:gap-x-6 mb-5 sm:mb-7">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-5 sm:mb-7">
                       {/* Show IMDb rating in hero when available (for movies/TV), MAL for anime */}
                       {type !== 'anime' && ratings.imdb ? (
-                        <div className="flex items-center gap-2">
-                          <span className="bg-[#f5c518] text-black font-bold text-xs px-1.5 py-0.5 rounded">IMDb</span>
-                          <span className="text-white font-semibold">
+                        <div className="premium-chip border-[#f5c518]/22 bg-[#f5c518]/10 text-[#fff1be]">
+                          <span className="rounded bg-[#f5c518] px-1.5 py-0.5 text-[10px] font-bold text-black">IMDb</span>
+                          <span className="font-semibold text-white">
                             {ratings.imdb.rating.toFixed(1)}
                           </span>
-                          <span className="text-white/72">
-                            ({formatVoteLabel(ratings.imdb.votes)})
-                          </span>
+                          <span className="text-white/56">{formatVoteLabel(ratings.imdb.votes)}</span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2">
-                          <Star className="w-5 h-5 text-amber-400 fill-current" />
-                          <span className="text-white font-semibold">
+                        <div className="premium-chip border-[#ffc562]/22 bg-[#ffc562]/10 text-[#ffe6b1]">
+                          <Star className="w-4 h-4 text-amber-400 fill-current" />
+                          <span className="font-semibold text-white">
                             {content.voteAverage.toFixed(1)}
                           </span>
-                          <span className="text-white/72">
-                            ({formatVoteLabel(content.voteCount)})
-                          </span>
+                          <span className="text-white/56">{formatVoteLabel(content.voteCount)}</span>
                         </div>
                       )}
 
                       {content.releaseDate && (
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-5 h-5 text-blue-400" />
-                          <span className="text-white/72">
+                        <div className="premium-chip bg-white/[0.04] text-white/76">
+                          <Calendar className="w-4 h-4 text-blue-400" />
+                          <span>
                             {new Date(content.releaseDate).getFullYear()}
                           </span>
                         </div>
                       )}
 
                       {content.runtime && (
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-5 h-5 text-purple-400" />
-                          <span className="text-white/72">
+                        <div className="premium-chip bg-white/[0.04] text-white/76">
+                          <Clock className="w-4 h-4 text-purple-400" />
+                          <span>
                             {formatRuntime(content.runtime)}
                           </span>
                         </div>
                       )}
 
                       {seasonEpisodeLabel && (
-                        <div className="flex items-center gap-2">
-                          <Users className="w-5 h-5 text-emerald-400" />
-                          <span className="text-white/72">{seasonEpisodeLabel}</span>
+                        <div className="premium-chip bg-white/[0.04] text-white/76">
+                          <Users className="w-4 h-4 text-emerald-400" />
+                          <span>{seasonEpisodeLabel}</span>
                         </div>
                       )}
                     </div>
@@ -517,7 +539,7 @@ export default function ContentDetailsPage() {
                       {content.genres?.map((genre) => (
                         <span
                           key={`genre-${genre}`}
-                          className="px-2 sm:px-3 py-0.5 sm:py-1 bg-white/[0.04] border border-white/10 rounded text-xs sm:text-sm text-white/76"
+                          className="premium-chip border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] text-white/76 sm:text-xs"
                         >
                           {genre}
                         </span>
@@ -529,7 +551,7 @@ export default function ContentDetailsPage() {
                       {content.trailerUrl && (
                       <button
                         onClick={() => setShowTrailer(true)}
-                        className="flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-white/90 sm:w-auto sm:gap-3 sm:px-8 sm:py-4 sm:text-base"
+                        className="premium-button-primary flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-white/90 sm:w-auto sm:gap-3 sm:px-8 sm:py-4 sm:text-base"
                       >
                         <Play className="w-4 h-4 sm:w-5 sm:h-5" />
                         Watch Trailer
@@ -602,15 +624,13 @@ export default function ContentDetailsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8">
-            Ratings
-          </h2>
+          <SectionTitle icon={Star} title="Ratings" />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 md:gap-8">
             {/* Anime: MAL Score (real-time from Jikan API) */}
             {type === 'anime' ? (
               <>
                 {content.voteAverage > 0 && (
-                <div className="bg-[#16181D] rounded-xl p-3 sm:p-6 md:p-8 flex flex-col items-center border border-[#2A2D35]">
+                <div className="details-data-card flex flex-col items-center p-3 sm:p-6 md:p-8">
                   <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-[#2e51a2] flex items-center justify-center mb-2 sm:mb-3 md:mb-4">
                     <span className="text-white font-extrabold text-[10px] sm:text-xs tracking-tight">MAL</span>
                   </div>
@@ -626,7 +646,7 @@ export default function ContentDetailsPage() {
                 </div>
                 )}
                 {content.malRanking && (
-                <div className="bg-[#16181D] rounded-xl p-3 sm:p-6 md:p-8 flex flex-col items-center border border-[#2A2D35]">
+                <div className="details-data-card flex flex-col items-center p-3 sm:p-6 md:p-8">
                   <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-purple-600 to-fuchsia-500 flex items-center justify-center mb-2 sm:mb-3 md:mb-4">
                     <Award className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                   </div>
@@ -641,7 +661,7 @@ export default function ContentDetailsPage() {
             ) : (
               <>
                 {/* IMDb Rating â€” PRIMARY (real-time from RapidAPI) */}
-                <div className="bg-[#16181D] rounded-xl p-3 sm:p-6 md:p-10 flex flex-col items-center border border-[#2A2D35] ring-1 ring-[#f5c518]/30">
+                <div className="details-data-card flex flex-col items-center p-3 sm:p-6 md:p-10 ring-1 ring-[#f5c518]/30">
                   <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-20 md:h-20 rounded-full bg-[#f5c518] flex items-center justify-center mb-2 sm:mb-3 md:mb-4">
                     <span className="text-black font-extrabold text-[10px] sm:text-xs md:text-base tracking-tight">IMDb</span>
                   </div>
@@ -664,7 +684,7 @@ export default function ContentDetailsPage() {
 
                 {/* TMDB Rating */}
                 {content.voteAverage > 0 && (
-                <div className="bg-[#16181D] rounded-xl p-3 sm:p-6 md:p-8 flex flex-col items-center border border-[#2A2D35]">
+                <div className="details-data-card flex flex-col items-center p-3 sm:p-6 md:p-8">
                   <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-[#01b4e4] flex items-center justify-center mb-2 sm:mb-3 md:mb-4">
                     <span className="text-white font-extrabold text-[10px] sm:text-xs tracking-tight">TMDB</span>
                   </div>
@@ -681,7 +701,7 @@ export default function ContentDetailsPage() {
                 )}
 
                 {/* Metacritic / Metascore */}
-                <div className="bg-[#16181D] rounded-xl p-3 sm:p-6 md:p-8 flex flex-col items-center border border-[#2A2D35]">
+                <div className="details-data-card flex flex-col items-center p-3 sm:p-6 md:p-8">
                   <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-[#ffcc34] flex items-center justify-center mb-2 sm:mb-3 md:mb-4">
                     <span className="text-black font-extrabold text-base sm:text-xl">M</span>
                   </div>
@@ -708,13 +728,11 @@ export default function ContentDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8">
-              Production Details
-            </h2>
+            <SectionTitle icon={DollarSign} title="Production Details" />
             
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
               {content.budget && (
-                <div className="glass-card p-3 sm:p-6">
+                <div className="details-data-card p-3 sm:p-6">
                   <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                     <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" />
                     <h3 className="font-semibold text-white text-sm sm:text-base">Budget</h3>
@@ -726,7 +744,7 @@ export default function ContentDetailsPage() {
               )}
 
               {content.revenue && (
-                <div className="glass-card p-3 sm:p-6">
+                <div className="details-data-card p-3 sm:p-6">
                   <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                     <Award className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
                     <h3 className="font-semibold text-white text-sm sm:text-base">Box Office</h3>
@@ -738,7 +756,7 @@ export default function ContentDetailsPage() {
               )}
 
               {content.originalLanguage && (
-                <div className="glass-card p-3 sm:p-6">
+                <div className="details-data-card p-3 sm:p-6">
                   <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                     <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                     <h3 className="font-semibold text-white text-sm sm:text-base">Language</h3>
@@ -750,7 +768,7 @@ export default function ContentDetailsPage() {
               )}
 
               {content.status && (
-                <div className="glass-card p-3 sm:p-6">
+                <div className="details-data-card p-3 sm:p-6">
                   <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                     <Users className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
                     <h3 className="font-semibold text-white text-sm sm:text-base">Status</h3>
@@ -770,13 +788,11 @@ export default function ContentDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8">
-              Anime Metadata
-            </h2>
+            <SectionTitle icon={Sparkles} title="Anime Metadata" />
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {content.season && (
-                <div className="glass-card p-3 sm:p-6">
+                <div className="details-data-card p-3 sm:p-6">
                   <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                     <CalendarRange className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />
                     <h3 className="font-semibold text-white text-sm sm:text-base">Season</h3>
@@ -786,7 +802,7 @@ export default function ContentDetailsPage() {
               )}
 
               {content.broadcast && (
-                <div className="glass-card p-3 sm:p-6">
+                <div className="details-data-card p-3 sm:p-6">
                   <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                     <Radio className="w-5 h-5 sm:w-6 sm:h-6 text-fuchsia-400" />
                     <h3 className="font-semibold text-white text-sm sm:text-base">Broadcast</h3>
@@ -796,7 +812,7 @@ export default function ContentDetailsPage() {
               )}
 
               {content.sourceMaterial && (
-                <div className="glass-card p-3 sm:p-6">
+                <div className="details-data-card p-3 sm:p-6">
                   <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                     <BookOpenText className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
                     <h3 className="font-semibold text-white text-sm sm:text-base">Source</h3>
@@ -806,7 +822,7 @@ export default function ContentDetailsPage() {
               )}
 
               {content.producers && content.producers.length > 0 && (
-                <div className="glass-card p-3 sm:p-6">
+                <div className="details-data-card p-3 sm:p-6">
                   <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                     <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" />
                     <h3 className="font-semibold text-white text-sm sm:text-base">Producers</h3>
@@ -818,7 +834,7 @@ export default function ContentDetailsPage() {
 
             <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
               {content.themes && content.themes.length > 0 && (
-                <div className="glass-card p-4 sm:p-6">
+                <div className="details-data-card p-4 sm:p-6">
                   <h3 className="text-[#808080] text-xs sm:text-sm font-semibold uppercase mb-3">Themes</h3>
                   <div className="flex flex-wrap gap-2">
                     {content.themes.map((item) => <span key={item} className="premium-chip bg-white/[0.03] text-[#E5E5E5]">{item}</span>)}
@@ -827,7 +843,7 @@ export default function ContentDetailsPage() {
               )}
 
               {((content.demographics && content.demographics.length > 0) || (content.licensors && content.licensors.length > 0)) && (
-                <div className="glass-card p-4 sm:p-6 space-y-4">
+                <div className="details-data-card space-y-4 p-4 sm:p-6">
                   {content.demographics && content.demographics.length > 0 && (
                     <div>
                       <h3 className="text-[#808080] text-xs sm:text-sm font-semibold uppercase mb-3">Demographics</h3>
@@ -855,9 +871,7 @@ export default function ContentDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8">
-              Cast & Crew
-            </h2>
+            <SectionTitle icon={Users} title="Cast & Crew" />
 
             {/* Director & Writers */}
             {(content.director || (content.writers && content.writers.length > 0)) ? (
@@ -901,7 +915,7 @@ export default function ContentDetailsPage() {
                 return (
                 <button
                   key={castKey}
-                  className={`flex-shrink-0 w-20 sm:w-24 md:w-28 text-center group ${actor.id > 0 ? 'cursor-pointer' : 'cursor-default'}`}
+                  className={`details-rail-card flex-shrink-0 w-24 sm:w-28 md:w-32 text-center group ${actor.id > 0 ? 'cursor-pointer' : 'cursor-default'}`}
                   onClick={async () => {
                     if (actor.id > 0) {
                       setSelectedPersonId(actor.id);
@@ -921,7 +935,7 @@ export default function ContentDetailsPage() {
                     }
                   }}
                 >
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-[#1C1E24] mb-2 sm:mb-3 flex items-center justify-center overflow-hidden ring-2 ring-transparent group-hover:ring-[#2A2D35] transition-all">
+                  <div className="mx-auto mb-2 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[#1C1E24] ring-2 ring-transparent transition-all group-hover:ring-[#2A2D35] sm:mb-3 sm:h-24 sm:w-24 md:h-28 md:w-28">
                     {canShowImage ? (
                       <img
                         src={getImageUrl(actor.profilePath, 'small')}
@@ -963,9 +977,7 @@ export default function ContentDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
           >
-            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8">
-              Episodes
-            </h2>
+            <SectionTitle icon={Tv} title="Episodes" />
             <EpisodeList
               contentType={type as 'tv' | 'anime'}
               contentId={content.externalId}
@@ -983,19 +995,18 @@ export default function ContentDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.75 }}
           >
-            <div className="flex items-center gap-3 mb-4 sm:mb-8">
-              <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white">
-                Where to Watch
-              </h2>
+            <div className="flex items-center justify-between gap-3 mb-4 sm:mb-8">
+              <SectionTitle icon={Globe} title="Where to Watch" />
               {watchProviders.link && (
                 <a
                   href={watchProviders.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#808080] hover:text-white transition-colors"
+                  className="premium-chip shrink-0 text-[#F4EFE6]/68 hover:text-white transition-colors"
                   title="View on JustWatch"
                 >
                   <ExternalLink className="w-4 h-4" />
+                  JustWatch
                 </a>
               )}
             </div>
@@ -1009,7 +1020,7 @@ export default function ContentDetailsPage() {
                   </h3>
                   <div className="flex flex-wrap gap-3">
                     {watchProviders.streaming.map((p) => (
-                      <div key={`streaming-${p.id}`} className="flex items-center gap-2 bg-[#16181D] border border-[#2A2D35] rounded-lg px-3 py-2">
+                      <div key={`streaming-${p.id}`} className="provider-pill flex items-center gap-2 px-3 py-2">
                         {p.logoUrl && (
                           <img src={getImageUrl(p.logoUrl, 'small')} alt={p.name} className="w-7 h-7 rounded" />
                         )}
@@ -1026,7 +1037,7 @@ export default function ContentDetailsPage() {
                   <h3 className="text-[#808080] text-xs sm:text-sm font-semibold uppercase mb-3">Free</h3>
                   <div className="flex flex-wrap gap-3">
                     {watchProviders.free.map((p) => (
-                      <div key={`free-${p.id}`} className="flex items-center gap-2 bg-[#16181D] border border-[#2A2D35] rounded-lg px-3 py-2">
+                      <div key={`free-${p.id}`} className="provider-pill flex items-center gap-2 px-3 py-2">
                         {p.logoUrl && (
                           <img src={getImageUrl(p.logoUrl, 'small')} alt={p.name} className="w-7 h-7 rounded" />
                         )}
@@ -1043,7 +1054,7 @@ export default function ContentDetailsPage() {
                   <h3 className="text-[#808080] text-xs sm:text-sm font-semibold uppercase mb-3">Rent</h3>
                   <div className="flex flex-wrap gap-3">
                     {watchProviders.rent.map((p) => (
-                      <div key={`rent-${p.id}`} className="flex items-center gap-2 bg-[#16181D] border border-[#2A2D35] rounded-lg px-3 py-2">
+                      <div key={`rent-${p.id}`} className="provider-pill flex items-center gap-2 px-3 py-2">
                         {p.logoUrl && (
                           <img src={getImageUrl(p.logoUrl, 'small')} alt={p.name} className="w-7 h-7 rounded" />
                         )}
@@ -1060,7 +1071,7 @@ export default function ContentDetailsPage() {
                   <h3 className="text-[#808080] text-xs sm:text-sm font-semibold uppercase mb-3">Buy</h3>
                   <div className="flex flex-wrap gap-3">
                     {watchProviders.buy.map((p) => (
-                      <div key={`buy-${p.id}`} className="flex items-center gap-2 bg-[#16181D] border border-[#2A2D35] rounded-lg px-3 py-2">
+                      <div key={`buy-${p.id}`} className="provider-pill flex items-center gap-2 px-3 py-2">
                         {p.logoUrl && (
                           <img src={getImageUrl(p.logoUrl, 'small')} alt={p.name} className="w-7 h-7 rounded" />
                         )}
@@ -1081,9 +1092,7 @@ export default function ContentDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
           >
-            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8">
-              {type === 'anime' ? 'Anime Recommendations' : 'You Might Also Like'}
-            </h2>
+            <SectionTitle icon={Star} title={type === 'anime' ? 'Anime Recommendations' : 'You Might Also Like'} />
             <div className="relative group/similar">
               <button
                 onClick={() => similarScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })}
@@ -1101,10 +1110,10 @@ export default function ContentDetailsPage() {
                 {similarContent.map((item) => (
                   <button
                     key={item.externalId}
-                    className="flex-shrink-0 w-32 sm:w-40 md:w-44 group cursor-pointer text-left"
+                    className="details-rail-card flex-shrink-0 w-32 sm:w-40 md:w-44 group cursor-pointer text-left"
                     onClick={() => navigate(`/content/${item.type}/${item.externalId}`, { state: { from: `${location.pathname}${location.search}` } })}
                   >
-                    <div className="aspect-[2/3] rounded-lg overflow-hidden bg-[#1C1E24] mb-2 ring-2 ring-transparent group-hover:ring-[#2A2D35] transition-all">
+                    <div className="mb-2 aspect-[2/3] overflow-hidden rounded-[22px] bg-[#1C1E24] ring-2 ring-transparent transition-all group-hover:ring-[#2A2D35]">
                       {item.posterPath ? (
                         <img
                           src={getImageUrl(item.posterPath, 'medium')}
@@ -1140,9 +1149,7 @@ export default function ContentDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.85 }}
           >
-            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8">
-              Current Trending
-            </h2>
+            <SectionTitle icon={Radio} title="Current Trending" />
             <div className="relative group/trending">
               <button
                 onClick={() => trendingScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })}
@@ -1160,10 +1167,10 @@ export default function ContentDetailsPage() {
                 {currentTrending.map((item) => (
                   <button
                     key={`trending-${item.externalId}`}
-                    className="flex-shrink-0 w-32 sm:w-40 md:w-44 group cursor-pointer text-left"
+                    className="details-rail-card flex-shrink-0 w-32 sm:w-40 md:w-44 group cursor-pointer text-left"
                     onClick={() => navigate(`/content/${item.type}/${item.externalId}`, { state: { from: `${location.pathname}${location.search}` } })}
                   >
-                    <div className="aspect-[2/3] rounded-lg overflow-hidden bg-[#1C1E24] mb-2 ring-2 ring-transparent group-hover:ring-[#2A2D35] transition-all">
+                    <div className="mb-2 aspect-[2/3] overflow-hidden rounded-[22px] bg-[#1C1E24] ring-2 ring-transparent transition-all group-hover:ring-[#2A2D35]">
                       {item.posterPath ? (
                         <img
                           src={getImageUrl(item.posterPath, 'medium')}
@@ -1198,9 +1205,7 @@ export default function ContentDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9 }}
           >
-            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8">
-              Anime News
-            </h2>
+            <SectionTitle icon={BookOpenText} title="Anime News" />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {animeNews.map((item) => (
                 <a
@@ -1208,7 +1213,7 @@ export default function ContentDetailsPage() {
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="glass-card p-4 sm:p-5 hover:border-white/15 transition-colors"
+                  className="details-data-card p-4 sm:p-5 hover:border-white/15 transition-colors"
                 >
                   <p className="text-[10px] uppercase tracking-[0.18em] text-[#ffd48c] mb-2">Jikan News</p>
                   <h3 className="text-white font-semibold text-sm sm:text-base line-clamp-2 mb-2">{item.title}</h3>
@@ -1225,13 +1230,10 @@ export default function ContentDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.95 }}
           >
-            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-8 flex items-center gap-3">
-              <MessageSquareText className="w-5 h-5 text-[#ffd48c]" />
-              Anime Reviews
-            </h2>
+            <SectionTitle icon={MessageSquareText} title="Anime Reviews" />
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               {animeReviews.map((review, index) => (
-                <div key={`${review.author}-${index}`} className="glass-card p-4 sm:p-6">
+                <div key={`${review.author}-${index}`} className="details-data-card p-4 sm:p-6">
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <div>
                       <p className="text-white font-semibold text-sm sm:text-base">{review.author}</p>

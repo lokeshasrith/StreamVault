@@ -15,7 +15,8 @@ import {
   MessageSquare
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { getImageUrl, type NewsItem } from '../api/discoverApi';
+import type { NewsItem } from '../api/discoverApi';
+import { getImageUrl } from '../utils/media';
 
 /* ─── Category config ───────────────────────────────────────────────────── */
 const CAT: Record<string, { gradient: string; accent: string; icon: LucideIcon }> = {
