@@ -605,7 +605,7 @@ export default function DiscoverPage() {
   }, [activeAnimeFeed, animeViewPage, fetchAnimeFeedPage, mergeUniqueAnime]);
 
   return (
-    <div className="discover-page page-shell min-h-screen bg-[#0F1014] pt-11 sm:pt-16 md:pt-20 pb-20 md:pb-8">
+    <div className="discover-page page-shell min-h-screen bg-[#0F1014] pt-16 sm:pt-24 md:pt-28 pb-20 md:pb-8">
 
 
       {/* Hero Banner - show skeleton while loading, hidden when searching */}

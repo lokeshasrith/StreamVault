@@ -649,10 +649,40 @@ class DiscoverAPI {
 
   // Get real-time ratings from IMDb and Rotten Tomatoes
   async getRatings(title: string, year?: number, imdbId?: string): Promise<ExternalRatings> {
-    const params = new URLSearchParams({ title });
-    if (year) params.append('year', year.toString());
-    if (imdbId) params.append('imdbId', imdbId);
-    return get<ExternalRatings>(`/api/discover/ratings?${params}`);
+    const tryFetch = async (candidateTitle: string, candidateYear?: number, candidateImdbId?: string): Promise<ExternalRatings | null> => {
+      try {
+        const params = new URLSearchParams({ title: candidateTitle });
+        if (candidateYear) params.append('year', candidateYear.toString());
+        if (candidateImdbId) params.append('imdbId', candidateImdbId);
+        return await get<ExternalRatings>(`/api/discover/ratings?${params}`);
+      } catch {
+        return null;
+      }
+    };
+
+    const simplifiedTitle = title
+      .replace(/[\u2018\u2019'"`]/g, '')
+      .replace(/\s*[:-|].*$/, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+
+    const attempts: Array<{ candidateTitle: string; candidateYear?: number; candidateImdbId?: string }> = [
+      { candidateTitle: title, candidateYear: year, candidateImdbId: imdbId },
+      { candidateTitle: title, candidateImdbId: imdbId },
+      { candidateTitle: simplifiedTitle, candidateYear: year, candidateImdbId: imdbId },
+      { candidateTitle: simplifiedTitle, candidateImdbId: imdbId },
+      { candidateTitle: title },
+      { candidateTitle: simplifiedTitle },
+    ];
+
+    for (const attempt of attempts) {
+      const result = await tryFetch(attempt.candidateTitle, attempt.candidateYear, attempt.candidateImdbId);
+      if (result && (result.imdb || result.metacritic)) {
+        return result;
+      }
+    }
+
+    return { imdb: null, metacritic: null };
   }
 
   // Get genres

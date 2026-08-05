@@ -358,6 +358,14 @@
       linear-gradient(180deg, rgba(15, 19, 27, 0.95) 0%, rgba(8, 11, 17, 0.9) 100%);
   }
 
+  .details-hero-transparent {
+    background:
+      radial-gradient(circle at 12% 12%, rgba(255, 197, 98, 0.1), transparent 30%),
+      radial-gradient(circle at 88% 14%, rgba(90, 211, 255, 0.09), transparent 28%),
+      linear-gradient(180deg, rgba(12, 16, 24, 0.78) 0%, rgba(8, 11, 17, 0.66) 100%);
+    backdrop-filter: blur(4px);
+  }
+
   .library-filter-panel {
     background:
       linear-gradient(135deg, rgba(255, 197, 98, 0.06), transparent 28%),

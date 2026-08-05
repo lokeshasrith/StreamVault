@@ -453,7 +453,7 @@ export default function ContentDetailsPage() {
 
               {/* Info */}
               <div className="space-y-6 lg:col-span-9 lg:max-w-4xl">
-                <div className="details-hero-panel p-3 sm:p-5 md:p-7 lg:p-8">
+                <div className="details-hero-panel details-hero-transparent p-3 sm:p-5 md:p-7 lg:p-8">
                   <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
